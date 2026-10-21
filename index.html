@@ -104,7 +104,7 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
   <header>
     <div class="eyebrow">Ibara Kuro Black Label &rarr; Show Time</div>
     <h1>Show Time Patcher</h1>
-    <p class="lede">Load your own <span class="mono">ibarablk</span> romset. The page checks every file against the known CRC32, then automatically rebuilds <span class="mono">ibarablk_u4</span> and <span class="mono">u23</span> as the Show Time versions.</p>
+    <p class="lede">Load your own <span class="mono">ibarablk</span> romset. The page checks every file against the known CRC32, then automatically builds the Show Time files <span class="mono">ibarashow_u4</span> and <span class="mono">ibarashow_u23</span> from them.</p>
     <span class="privacy">Everything runs in your browser. Your ROMs are never uploaded.</span>
   </header>
 
@@ -142,12 +142,13 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     <div class="notice" id="out-notes" hidden></div>
     <div class="row" id="dl-row">
       <button class="primary" id="dl-patched" type="button" disabled>Download patched files (.zip)</button>
+      <button class="secondary" id="dl-romset" type="button" disabled>Download complete romset (ibarashow.zip)</button>
     </div>
     <div class="row" id="dl-raw-row" hidden>
-      <button class="secondary" id="dl-u4" type="button">ibarablk_u4</button>
-      <button class="secondary" id="dl-u23" type="button">u23</button>
+      <button class="secondary" id="dl-u4" type="button">ibarashow_u4</button>
+      <button class="secondary" id="dl-u23" type="button">ibarashow_u23</button>
     </div>
-    <p class="hint" id="dl-hint">The zip contains the Show Time <span class="mono">ibarablk_u4</span> and <span class="mono">u23</span>. Replace those two files in your romset and keep a backup of your originals. <span class="mono">ibarablk_u2</span> and <span class="mono">u24</span> stay as they are.</p>
+    <p class="hint" id="dl-hint"><strong>Patched files</strong> gives just <span class="mono">ibarashow_u4</span> and <span class="mono">ibarashow_u23</span>. <strong>Complete romset</strong> adds <span class="mono">ibarablk_u2</span> and <span class="mono">u24</span> from your zip, unchanged. Your original files are never modified.</p>
   </section>
 
   <footer>No ROM data is included in this page. It only rebuilds files from the dump you supply.</footer>
@@ -402,6 +403,7 @@ async function buildShowTime(u4, u23, swaps, bootText, progress = () => {}) {
     ["u24", EXTRAS.u24, "Copied unchanged"],
   ];
   const PATCHED = ["ibarablk_u4", "u23"];
+  const OUT_NAMES = { ibarablk_u4: "ibarashow_u4", u23: "ibarashow_u23" };
   const state = { entries: {}, zipBuf: null, srcName: "", inputs: null, result: null, isDefault: true };
 
   // ---------- zip reading ----------
@@ -623,7 +625,7 @@ async function buildShowTime(u4, u23, swaps, bootText, progress = () => {}) {
         allOk = allOk && ok;
         const pill = !def ? '<span class="pill warn">Custom build</span>' : ok ? '<span class="pill ok">Matches Show Time</span>' : '<span class="pill bad">Mismatch</span>';
         const tr = document.createElement("tr");
-        tr.innerHTML = `<td class="mono">${n}</td><td class="mono">${crc}</td><td class="sha">${h}</td><td>${pill}</td>`;
+        tr.innerHTML = `<td class="mono">${OUT_NAMES[n]}</td><td class="mono">${crc}</td><td class="sha">${h}</td><td>${pill}</td>`;
         $("out-body").appendChild(tr);
       }
       if (!allOk) throw new Error("The result doesn't match the known Show Time checksums. Please report this.");
@@ -633,6 +635,8 @@ async function buildShowTime(u4, u23, swaps, bootText, progress = () => {}) {
       if (notes.length) msg($("out-notes"), "warn", notes.join(" "));
       $("build-status").textContent = "Built and verified against the Show Time checksums.";
       $("dl-patched").disabled = false;
+      $("dl-romset").disabled = !state.canRomset;
+      $("dl-romset").title = state.canRomset ? "" : "Needs a romset zip containing ibarablk_u2 and u24 with the correct CRC32";
       $("dl-raw-row").hidden = !!window.claude;
     } catch (err) {
       $("build-status").textContent = "";
@@ -644,9 +648,9 @@ async function buildShowTime(u4, u23, swaps, bootText, progress = () => {}) {
 
   function resetOutput(note) {
     state.result = null;
-    $("out-body").innerHTML = `<tr><td class="mono">ibarablk_u4</td><td class="mono">${DEFAULT_OUTPUTS.ibarablk_u4.crc}</td><td class="sha">${DEFAULT_OUTPUTS.ibarablk_u4.sha1}</td><td><span class="pill">Expected</span></td></tr>` +
-      `<tr><td class="mono">u23</td><td class="mono">${DEFAULT_OUTPUTS.u23.crc}</td><td class="sha">${DEFAULT_OUTPUTS.u23.sha1}</td><td><span class="pill">Expected</span></td></tr>`;
-    $("dl-patched").disabled = true; $("dl-raw-row").hidden = true;
+    $("out-body").innerHTML = `<tr><td class="mono">ibarashow_u4</td><td class="mono">${DEFAULT_OUTPUTS.ibarablk_u4.crc}</td><td class="sha">${DEFAULT_OUTPUTS.ibarablk_u4.sha1}</td><td><span class="pill">Expected</span></td></tr>` +
+      `<tr><td class="mono">ibarashow_u23</td><td class="mono">${DEFAULT_OUTPUTS.u23.crc}</td><td class="sha">${DEFAULT_OUTPUTS.u23.sha1}</td><td><span class="pill">Expected</span></td></tr>`;
+    $("dl-patched").disabled = true; $("dl-romset").disabled = true; $("dl-raw-row").hidden = true;
     if (note) msg($("out-notes"), "", note); else $("out-notes").hidden = true;
   }
 
@@ -655,7 +659,7 @@ async function buildShowTime(u4, u23, swaps, bootText, progress = () => {}) {
     const items = {};
     for (const n of PATCHED) {
       const data = state.result[n];
-      items[n] = { name: n, method: 8, crc: crc32(data), size: data.length, data: await deflateRaw(data) };
+      items[n] = { name: OUT_NAMES[n], method: 8, crc: crc32(data), size: data.length, data: await deflateRaw(data) };
     }
     return items;
   }
@@ -676,13 +680,23 @@ async function buildShowTime(u4, u23, swaps, bootText, progress = () => {}) {
       }
     } finally { btn.textContent = old; btn.disabled = false; }
   }
+  $("dl-romset").addEventListener("click", async (ev) => {
+    const btn = ev.currentTarget;
+    const p = await patchedItems();
+    const items = PATCHED.map((n) => p[n]);
+    for (const n of Object.keys(EXTRAS)) {
+      const e = state.entries[n];
+      items.push({ name: n, method: e.method, crc: e.crc, size: e.size, data: new Uint8Array(state.zipBuf, e.dataStart, e.csize) });
+    }
+    await save("ibarashow.zip", writeZip(items), btn);
+  });
   $("dl-patched").addEventListener("click", async (ev) => {
     const btn = ev.currentTarget;
     const p = await patchedItems();
-    await save("ibarablk_showtime_files.zip", writeZip(PATCHED.map((n) => p[n])), btn);
+    await save("ibarashow_patched_files.zip", writeZip(PATCHED.map((n) => p[n])), btn);
   });
-  $("dl-u4").addEventListener("click", (ev) => save("ibarablk_u4", new Blob([state.result.ibarablk_u4]), ev.currentTarget));
-  $("dl-u23").addEventListener("click", (ev) => save("u23", new Blob([state.result.u23]), ev.currentTarget));
+  $("dl-u4").addEventListener("click", (ev) => save("ibarashow_u4", new Blob([state.result.ibarablk_u4], { type: "application/octet-stream" }), ev.currentTarget));
+  $("dl-u23").addEventListener("click", (ev) => save("ibarashow_u23", new Blob([state.result.u23], { type: "application/octet-stream" }), ev.currentTarget));
 
   // ---------- file input ----------
   const drop = $("drop");

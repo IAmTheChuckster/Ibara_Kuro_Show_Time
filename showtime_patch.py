@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Build the Ibara Kuro "Show Time" ROMs from your own Ibara Kuro Black Label dump.
 
-    ibarablk_u4  ->  ibarablk_u4  (Show Time version: play times, titles, boot text)
-    u23          ->  u23          (Show Time version: sound-chip sequence table)
+    ibarablk_u4  ->  ibarashow_u4   (Show Time version: play times, titles, boot text)
+    u23          ->  ibarashow_u23  (Show Time version: sound-chip sequence table)
 
 No ROM data is stored in this script. Every change is made from data that is
 already in your dump: songs that Black Label doesn't use are still present in
@@ -78,7 +78,8 @@ BOOT_LINES = (                              # boot text, one per region
     (0x0C0C4F88, b"    200x/xx/xx. MASTER VER.   "),
 )
 BOOT_DATE_CALLS = (0x0C06BC82, 0x0C06BC8E)  # "print clock month/day" calls -> NOP
-ROMSET_EXTRAS = ("ibarablk_u2", "u24")      # unchanged romset files copied by --zip
+ROMSET_EXTRAS = ("ibarablk_u2", "u24")
+OUT_NAMES = {"ibarablk_u4": "ibarashow_u4", "u23": "ibarashow_u23"}   # output file names      # unchanged romset files copied by --zip
 SEQ_TABLE = 0x400                           # u23 sequence pointer table (sound-chip byte order)
 
 # ---------------------------------------------------------------------------
@@ -395,9 +396,10 @@ def main():
                          f"(expected {DEFAULT_OUTPUTS[name]})")
     args.output.mkdir(parents=True, exist_ok=True)
     for name, data in results.items():
-        (args.output / name).write_bytes(data)
+        out = args.output / OUT_NAMES[name]
+        out.write_bytes(data)
         tag = "verified" if is_default else "custom build"
-        print(f"[ok] {args.output / name}  sha1 {sha1(data)}  ({tag})")
+        print(f"[ok] {out}  sha1 {sha1(data)}  ({tag})")
 
     if args.ips:
         args.ips.mkdir(parents=True, exist_ok=True)
@@ -410,7 +412,7 @@ def main():
             sys.exit("error: --zip would overwrite the input zip")
         with zipfile.ZipFile(args.zip, "w", zipfile.ZIP_DEFLATED) as zout:
             for name, data in results.items():
-                zout.writestr(name, data)
+                zout.writestr(OUT_NAMES[name], data)
             copied = 0
             if zipfile.is_zipfile(args.input):
                 with zipfile.ZipFile(args.input) as zin:
