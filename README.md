@@ -2,7 +2,7 @@
 
 ## To do
 1. Replace Warning Screen
-2. lower the countdown volume, if the chime and laughter are separate then remove the chime.
+2. lower the countdown volume by half, if the chime and laughter are separate then raise the laughter volume.
 3. Select character by pressing the start button
 4. Add infinite bomba in the Service menu
 
