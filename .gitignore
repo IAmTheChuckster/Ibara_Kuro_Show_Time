@@ -1,0 +1,9 @@
+# never commit ROMs
+ibarablk_u4
+u23
+ibarablk_u2
+u24
+*.zip
+*.ips
+output/
+__pycache__/

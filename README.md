@@ -26,6 +26,24 @@ The following source files are required
 | ibarablk_u4 | ee1f1f77 |
 | u23         | a436bb22 |
 
+### In your browser
+Open the **[Show Time Patcher](https://iamthechuckster.github.io/Ibara_Kuro_Show_Time/)** (`index.html`) and drop in your `ibarablk.zip`. It checks the file names and CRCs, builds the patched files automatically, and lets you download them as a zip. Everything runs in your browser; nothing is uploaded.
+
+### With Python
+Requires Python 3.8+ (standard library only).
+```sh
+python showtime_patch.py ibarablk.zip     # patched files go to ./output
+python showtime_patch.py --help           # more options
+```
+
+### Result
+| File Name   |   CRC    |
+|-------------|----------|
+| ibarablk_u4 | 07243591 |
+| u23         | 69403f24 |
+
+`ibarablk_u2` and `u24` are unchanged.
+
 ## Testing
 This patch was tested with MAME 0.289 and [CV1k core for the MiSTer FPGA by Raki](https://www.patreon.com/c/ikamusume/posts)<br>
 It may even work on a PCB but do so on your own risk.
