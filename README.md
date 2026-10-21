@@ -3,6 +3,7 @@
 ## To do
 1. Replace Warning Screen
 2. lower the countdown volume, if the chime and laughter are separate then remove the chime.
+3. Make both characters selectable
 
 A gameplay patch for Ibara Kuro Black Label (2006/02/06. MASTER VER.)<br> 
 This repository holds only source, tools and notes. **No ROM data is included**; you patch your own dump.
