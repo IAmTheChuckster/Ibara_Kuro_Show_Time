@@ -3,7 +3,7 @@
 ## To do
 1. Replace Warning Screen
 2. lower the countdown volume, if the chime and laughter are separate then remove the chime.
-3. Make both characters selectable
+3. Select character by pressing the start button
 4. Add infinite bomba in the Service menu
 
 A gameplay patch for Ibara Kuro Black Label (2006/02/06. MASTER VER.)<br> 
