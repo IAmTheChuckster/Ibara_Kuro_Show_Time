@@ -1,0 +1,702 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body>
+<title>Show Time Patcher</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Saira+Condensed:wght@600;700&display=swap">
+<style>
+/* Layout: one narrow working column; four steps in order, each a quiet panel; the file table is the centrepiece. */
+:root {
+  --bg: #f6f1f3; --surface: #ffffff; --sunken: #efe7ea; --fg: #22161b; --muted: #6e5b63;
+  --line: #e2d5da; --accent: #a3123c; --accent-fg: #ffffff; --accent-soft: #f7dfe6;
+  --ok: #1d7446; --ok-soft: #dff1e6; --warn: #985600; --warn-soft: #fbeed8; --bad: #b3261e; --bad-soft: #fbe2df;
+  --display: "Saira Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #130c0f; --surface: #1c1317; --sunken: #241920; --fg: #f2e8eb; --muted: #a8939b;
+  --line: #36262d; --accent: #ff5c86; --accent-fg: #1a0a10; --accent-soft: #3a1823;
+  --ok: #5cc98f; --ok-soft: #13301f; --warn: #f2a93b; --warn-soft: #33240c; --bad: #ff7a70; --bad-soft: #3a1714;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #130c0f; --surface: #1c1317; --sunken: #241920; --fg: #f2e8eb; --muted: #a8939b;
+  --line: #36262d; --accent: #ff5c86; --accent-fg: #1a0a10; --accent-soft: #3a1823;
+  --ok: #5cc98f; --ok-soft: #13301f; --warn: #f2a93b; --warn-soft: #33240c; --bad: #ff7a70; --bad-soft: #3a1714;
+  color-scheme: dark; }
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--body); padding: 0 16px; }
+.wrap { max-width: 860px; margin: 0 auto; padding-block: 40px 64px; display: flex; flex-direction: column; gap: 20px; }
+header { display: flex; flex-direction: column; gap: 6px; padding-bottom: 8px; }
+.eyebrow { font: 500 12px/1.3 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font: 700 clamp(40px, 8vw, 64px)/0.95 var(--display); letter-spacing: .01em; text-transform: uppercase; margin: 0; text-wrap: balance; }
+.lede { margin: 6px 0 0; max-width: 62ch; color: var(--muted); }
+.privacy { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); margin-top: 4px; }
+.privacy::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); flex: none; }
+
+section { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.step { display: flex; align-items: baseline; gap: 12px; }
+.step-no { font: 700 22px/1 var(--display); color: var(--accent); }
+h2 { font: 700 22px/1.1 var(--display); text-transform: uppercase; letter-spacing: .02em; margin: 0; }
+.hint { margin: 0; color: var(--muted); font-size: 14px; max-width: 65ch; }
+
+.drop { border: 2px dashed var(--line); border-radius: 8px; padding: 28px 16px; text-align: center; background: var(--sunken); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 10px; transition: border-color .15s, background .15s; }
+.drop:hover, .drop.over { border-color: var(--accent); background: var(--accent-soft); }
+.drop:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.drop strong { font-weight: 600; }
+.drop .src { font: 13px var(--mono); color: var(--muted); word-break: break-all; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.table-scroll { overflow-x: auto; margin: 0 -4px; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { text-align: left; font: 500 11px/1.3 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 6px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { padding: 10px; border-bottom: 1px solid var(--line); vertical-align: middle; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td.mono, .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 13px; }
+td .role { display: block; font-size: 12px; color: var(--muted); }
+.sha { font: 12px var(--mono); color: var(--muted); word-break: break-all; white-space: normal; min-width: 21ch; }
+.mismatch { color: var(--bad); font-weight: 500; }
+
+.pill { display: inline-flex; align-items: center; gap: 6px; font: 500 12px/1 var(--body); padding: 5px 9px; border-radius: 999px; background: var(--sunken); color: var(--muted); }
+.pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.pill.ok { background: var(--ok-soft); color: var(--ok); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+
+.notice { border-radius: 8px; padding: 10px 14px; font-size: 14px; background: var(--sunken); }
+.notice.ok { background: var(--ok-soft); color: var(--ok); }
+.notice.warn { background: var(--warn-soft); color: var(--warn); }
+.notice.bad { background: var(--bad-soft); color: var(--bad); }
+
+details { border: 1px solid var(--line); border-radius: 8px; }
+summary { cursor: pointer; padding: 12px 14px; font-weight: 500; list-style-position: inside; }
+summary .sub { font-weight: 400; color: var(--muted); font-size: 13px; margin-left: 6px; }
+.opts { padding: 4px 14px 16px; display: flex; flex-direction: column; gap: 16px; }
+.swaps { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px 16px; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field label, .lbl { font-size: 13px; color: var(--muted); }
+.field.changed label { color: var(--accent); font-weight: 500; }
+select, input[type=text] { font: 14px var(--body); color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px; width: 100%; }
+input[type=text] { font-family: var(--mono); letter-spacing: .02em; }
+select:focus-visible, input:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.boot { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: flex-end; }
+.boot .field { flex: 1 1 260px; }
+.check { display: inline-flex; gap: 8px; align-items: center; font-size: 14px; padding-bottom: 8px; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+
+button { font: 600 15px/1 var(--body); border-radius: 8px; padding: 12px 18px; cursor: pointer; border: 1px solid transparent; }
+button.primary { background: var(--accent); color: var(--accent-fg); }
+button.secondary { background: var(--surface); color: var(--fg); border-color: var(--line); }
+button.link { background: none; padding: 6px 0; color: var(--accent); font-weight: 500; font-size: 14px; }
+button:disabled { opacity: .45; cursor: not-allowed; }
+button.primary:not(:disabled):hover { filter: brightness(1.08); }
+button.secondary:not(:disabled):hover { border-color: var(--accent); }
+
+.progress { height: 8px; background: var(--sunken); border-radius: 99px; overflow: hidden; }
+.progress > div { height: 100%; width: 0; background: var(--accent); transition: width .15s; }
+.status { font-size: 13px; color: var(--muted); }
+footer { font-size: 13px; color: var(--muted); text-align: center; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Ibara Kuro Black Label &rarr; Show Time</div>
+    <h1>Show Time Patcher</h1>
+    <p class="lede">Load your own <span class="mono">ibarablk</span> romset. The page checks every file against the known CRC32, then automatically rebuilds <span class="mono">ibarablk_u4</span> and <span class="mono">u23</span> as the Show Time versions.</p>
+    <span class="privacy">Everything runs in your browser. Your ROMs are never uploaded.</span>
+  </header>
+
+  <section aria-labelledby="h-load">
+    <div class="step"><span class="step-no">1</span><h2 id="h-load">Load your romset</h2></div>
+    <label class="drop" id="drop">
+      <input type="file" id="file" class="visually-hidden" multiple>
+      <strong>Drop <span class="mono">ibarablk.zip</span> here, or click to choose</strong>
+      <span class="hint">A MAME romset zip works best. Loose <span class="mono">ibarablk_u4</span> and <span class="mono">u23</span> files are fine too.</span>
+      <span class="src" id="src" hidden></span>
+    </label>
+  </section>
+
+  <section aria-labelledby="h-check">
+    <div class="step"><span class="step-no">2</span><h2 id="h-check">Check files</h2></div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>File</th><th>Size</th><th>Expected CRC32</th><th>Found CRC32</th><th>Status</th></tr></thead>
+        <tbody id="check-body"></tbody>
+      </table>
+    </div>
+    <div class="notice" id="check-msg">Waiting for a romset. The table shows what the page will look for.</div>
+  </section>
+
+  <section aria-labelledby="h-out">
+    <div class="step"><span class="step-no">3</span><h2 id="h-out">Download Show Time</h2></div>
+    <div class="row" id="build-row" hidden><span class="status" id="build-status"></span></div>
+    <div class="progress" id="progress" hidden><div></div></div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>File</th><th>CRC32</th><th>SHA-1</th><th>Status</th></tr></thead>
+        <tbody id="out-body"></tbody>
+      </table>
+    </div>
+    <div class="notice" id="out-notes" hidden></div>
+    <div class="row" id="dl-row">
+      <button class="primary" id="dl-patched" type="button" disabled>Download patched files (.zip)</button>
+    </div>
+    <div class="row" id="dl-raw-row" hidden>
+      <button class="secondary" id="dl-u4" type="button">ibarablk_u4</button>
+      <button class="secondary" id="dl-u23" type="button">u23</button>
+    </div>
+    <p class="hint" id="dl-hint">The zip contains the Show Time <span class="mono">ibarablk_u4</span> and <span class="mono">u23</span>. Replace those two files in your romset and keep a backup of your originals. <span class="mono">ibarablk_u2</span> and <span class="mono">u24</span> stay as they are.</p>
+  </section>
+
+  <footer>No ROM data is included in this page. It only rebuilds files from the dump you supply.</footer>
+</div>
+
+<script id="core">
+// ---- Show Time patch core: a straight port of showtime_patch.py ----
+const SONGS = {
+  "Show Time": [0x0F, 0x10], "Sky High": [0x11, 0x12], "Like a Rolling Stone": [0x13, 0x14],
+  "Endress Train": [0x15, 0x16], "Robot No28": [0x17, 0x18], "Rose Garden": [0x19, 0x1A],
+  "Ending": [0x02, 0x03], "Guardian Angel": [0x09, 0x0A], "Rose of Zeal": [0x07, 0x08],
+  "Ranking": [0x04, 0x05], "Bonds of Steel": [0x1B, 0x1C], "The Family's Work": [0x1D, 0x1E],
+  "Air Pollution": [0x1F, 0x20],
+};
+const BL_SLOTS = ["Sky High", "Like a Rolling Stone", "Endress Train", "Robot No28",
+  "Rose Garden", "Ending", "Guardian Angel", "Rose of Zeal", "Ranking",
+  "Bonds of Steel", "The Family's Work", "Air Pollution"];
+const DEFAULT_SWAPS = [["Bonds of Steel", "Show Time"], ["Air Pollution", "Sky High"],
+  ["The Family's Work", "Robot No28"]];
+const DEFAULT_BOOT_TEXT = "2026/10/12 SHOW TIME";
+const INPUTS = {
+  ibarablk_u4: { size: 2097152, crc: "ee1f1f77", sha1: "ac276f3955aa4dde2544af4912819a7ae6bcf8dd" },
+  u23: { size: 4194304, crc: "a436bb22", sha1: "0556e771cc02638bf8814315ba671c2d442594f1" },
+};
+const EXTRAS = {   // the rest of the MAME romset, copied unchanged into the output zip
+  ibarablk_u2: { size: 138412032, crc: "5e46be44" },
+  u24: { size: 4194304, crc: "d11ab6b6" },
+};
+const DEFAULT_OUTPUTS = {
+  ibarablk_u4: { crc: "07243591", sha1: "82403646d72070ea3207d464a25fa8c2ff90f943" },
+  u23: { crc: "69403f24", sha1: "51f6536b0845fc26f266761ae344992fb38ffee8" },
+};
+const UNPACKED_PROGRAM_SHA1 = "531fc52e0d84866bca8509f36a9c9e6319667bea";
+const PACK_START = 0x51000, PACK_LIMIT = 0xFB4C0, RAM_BASE = 0x0C051000;
+const TIMING_TABLES = [0x0C0C3A58, 0x0C0C3E58];
+const TITLE_AREA = [0x0C2069B4, 0x0C206A88];
+const BOOT_LINES = [[0x0C0C4E08, "    2006/xx/xx. MASTER VER.   "],
+                    [0x0C0C4F88, "    200x/xx/xx. MASTER VER.   "]];
+const BOOT_DATE_CALLS = [0x0C06BC82, 0x0C06BC8E];
+const SEQ_TABLE = 0x400;
+const MAXD = 2047, MINL = 3, MAXL = 34;
+
+const CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1;
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+function crc32(u8) {
+  let c = 0xFFFFFFFF;
+  for (let i = 0; i < u8.length; i++) c = CRC_TABLE[(c ^ u8[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+const hex8 = (n) => (n >>> 0).toString(16).padStart(8, "0");
+async function sha1(u8) {
+  const h = new Uint8Array(await crypto.subtle.digest("SHA-1", u8));
+  return Array.from(h, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+const latin1 = (s) => Uint8Array.from(s, (ch) => ch.charCodeAt(0));
+const u32be = (b, o) => ((b[o] << 24) | (b[o + 1] << 16) | (b[o + 2] << 8) | b[o + 3]) >>> 0;
+
+function wordswap(b) {
+  const out = new Uint8Array(b.length);
+  for (let i = 0; i + 1 < b.length; i += 2) { out[i] = b[i + 1]; out[i + 1] = b[i]; }
+  return out;
+}
+
+function lzDecompress(buf, base) {
+  const size = u32be(buf, base), count = u32be(buf, base + 4);
+  let fl = base + 12, dp = base + u32be(buf, base + 8);
+  const out = new Uint8Array(size);
+  let n = 0, bits = 0, flag = 0;
+  for (let c = 0; c < count; c++) {
+    if (bits === 0) { flag = buf[fl++]; bits = 8; }
+    if (flag & 0x80) {
+      const w = (buf[dp] << 8) | buf[dp + 1]; dp += 2;
+      const start = n - (w >> 5), len = (w & 0x1F) + 3;
+      if (start < 0 || n + len > size) throw new Error("corrupt packed program");
+      for (let k = 0; k < len; k++) out[n++] = out[start + k];
+    } else {
+      if (n >= size) throw new Error("corrupt packed program");
+      out[n++] = buf[dp++];
+    }
+    flag = (flag << 1) & 0xFF;
+    bits--;
+  }
+  if (n !== size) throw new Error("corrupt packed program");
+  return out;
+}
+
+// Optimal-parse LZSS, identical output to the Python version.
+function lzCompress(d, progress) {
+  const n = d.length;
+  const head = new Int32Array(0x40000).fill(-1);
+  const prev = new Int32Array(n).fill(-1);
+  const bl = new Uint8Array(n), bd = new Uint16Array(n);
+  for (let i = 0; i < n; i++) {
+    if (progress && (i & 0xFFFF) === 0) progress(i / n * 0.9);
+    let best = 0, bdist = 0;
+    if (i + MINL <= n) {
+      const h = ((d[i] << 10) ^ (d[i + 1] << 5) ^ d[i + 2]) & 0x3FFFF;
+      const m = n - i < MAXL ? n - i : MAXL;
+      let j = head[h];
+      while (j >= 0 && i - j <= MAXD) {
+        if (best < m && d[j + best] === d[i + best]) {
+          let l = 0;
+          while (l < m && d[j + l] === d[i + l]) l++;
+          if (l > best) {
+            best = l; bdist = i - j;
+            if (l === MAXL) break;
+          }
+        }
+        j = prev[j];
+      }
+      prev[i] = head[h];
+      head[h] = i;
+    }
+    if (best >= MINL) { bl[i] = best; bd[i] = bdist; }
+  }
+  const cost = new Float64Array(n + 1), choice = new Uint8Array(n);
+  for (let i = n - 1; i >= 0; i--) {
+    let c = 9 + cost[i + 1], ch = 0;
+    for (let L = MINL; L <= bl[i]; L++) {
+      const cc = 17 + cost[i + L];
+      if (cc < c) { c = cc; ch = L; }
+    }
+    cost[i] = c; choice[i] = ch;
+  }
+  const flags = [], data = [];
+  let items = 0, bit = 0, i = 0;
+  while (i < n) {
+    if (bit === 0) flags.push(0);
+    const L = choice[i];
+    if (L) {
+      flags[flags.length - 1] |= 0x80 >> bit;
+      const w = (bd[i] << 5) | (L - 3);
+      data.push(w >> 8, w & 0xFF);
+      i += L;
+    } else {
+      data.push(d[i]);
+      i++;
+    }
+    bit = (bit + 1) & 7;
+    items++;
+  }
+  const out = new Uint8Array(12 + flags.length + data.length);
+  const put32 = (o, v) => { out[o] = v >>> 24; out[o + 1] = (v >>> 16) & 255; out[o + 2] = (v >>> 8) & 255; out[o + 3] = v & 255; };
+  put32(0, n); put32(4, items); put32(8, 12 + flags.length);
+  out.set(flags, 12); out.set(data, 12 + flags.length);
+  return out;
+}
+
+function titleFields(prog) {
+  const lo = TITLE_AREA[0] - RAM_BASE, hi = TITLE_AREA[1] - RAM_BASE;
+  const starts = [];
+  for (let i = lo; i < hi; i++) if (prog[i] === 0x24 && (i === lo || prog[i - 1] === 0)) starts.push(i);
+  const fields = {};
+  starts.forEach((s, k) => {
+    const end = k + 1 < starts.length ? starts[k + 1] : hi;
+    let e = s; while (prog[e] !== 0) e++;
+    fields[String.fromCharCode(...prog.subarray(s + 1, e))] = [s, end - s];
+  });
+  return fields;
+}
+
+function checkSwaps(swaps) {
+  for (const [o, n] of swaps) {
+    if (!BL_SLOTS.includes(o)) throw new Error(`'${o}' is not a replaceable Black Label song`);
+    if (!(n in SONGS)) throw new Error(`unknown song '${n}'`);
+  }
+}
+
+// Returns {u4, u23, notes}. bootText null = leave boot text unchanged.
+async function buildShowTime(u4, u23, swaps, bootText, progress = () => {}) {
+  checkSwaps(swaps);
+  const notes = [];
+  // sound ROM: re-point sequences
+  const snd = wordswap(u23), origSnd = snd.slice();
+  const ent = (n) => SEQ_TABLE + 4 * n;
+  for (const [o, n] of swaps) {
+    const [oi, ol] = SONGS[o], [ni, nl] = SONGS[n];
+    for (const [dst, src] of [[oi, ni], [ol, nl]]) snd.set(origSnd.subarray(ent(src), ent(src) + 4), ent(dst));
+  }
+  const out23 = wordswap(snd);
+
+  // program: unpack
+  progress(0.01, "Unpacking program");
+  const cpu = wordswap(u4);
+  const prog = lzDecompress(cpu, PACK_START);
+  if (await sha1(prog) !== UNPACKED_PROGRAM_SHA1) throw new Error("unexpected program contents (not the expected ibarablk_u4)");
+  const orig = prog.slice();
+
+  for (const t of TIMING_TABLES) {
+    const o = t - RAM_BASE, get = (n) => orig.subarray(o + 4 * n, o + 4 * n + 4);
+    for (const [os, ns] of swaps) {
+      const [oi, ol] = SONGS[os], [ni, nl] = SONGS[ns];
+      prog.set(get(ni), o + 4 * oi);
+      prog.set(get(nl), o + 4 * ol);
+    }
+  }
+  const fields = titleFields(orig);
+  for (const [o, n] of swaps) {
+    if (!(o in fields)) throw new Error(`'${o}' is not a Black Label song slot`);
+    const [off, size] = fields[o];
+    let text = latin1("$" + n);
+    if (text.length + 1 > size) {
+      text = text.subarray(0, size - 1);
+      notes.push(`Title '${n}' shortened to '${String.fromCharCode(...text.subarray(1))}' to fit the '${o}' slot`);
+    }
+    prog.fill(0, off, off + size);
+    prog.set(text, off);
+  }
+  if (bootText !== null) {
+    const line = "    " + bootText;
+    if (line.length > 30) throw new Error("boot text is limited to 26 characters");
+    for (const [addr, expect] of BOOT_LINES) {
+      const o = addr - RAM_BASE;
+      if (String.fromCharCode(...orig.subarray(o, o + 30)) !== expect) throw new Error("boot text not found where expected");
+      prog.set(latin1(line.padEnd(30, " ")), o);
+    }
+    for (const addr of BOOT_DATE_CALLS) {
+      const o = addr - RAM_BASE;
+      if (orig[o] !== 0x49 || orig[o + 1] !== 0x0b) throw new Error("boot date code not found where expected");
+      prog[o] = 0x00; prog[o + 1] = 0x09;
+    }
+  }
+
+  progress(0.05, "Repacking program");
+  const packed = lzCompress(prog, (f) => progress(0.05 + f * 0.9, "Repacking program"));
+  if (PACK_START + packed.length > PACK_LIMIT) throw new Error("repacked program does not fit");
+  cpu.fill(0, PACK_START, PACK_LIMIT);
+  cpu.set(packed, PACK_START);
+  progress(0.97, "Verifying");
+  const check = lzDecompress(cpu, PACK_START);
+  if (check.length !== prog.length || !check.every((v, i) => v === prog[i])) throw new Error("repack verification failed");
+  progress(1, "Done");
+  return { u4: wordswap(cpu), u23: out23, notes };
+}
+
+</script>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const fmtSize = (n) => n >= 1048576 ? (n / 1048576).toFixed(n % 1048576 ? 1 : 0) + " MB" : n.toLocaleString() + " B";
+  const ROWS = [
+    ["ibarablk_u4", INPUTS.ibarablk_u4, "Patched"],
+    ["u23", INPUTS.u23, "Patched"],
+    ["ibarablk_u2", EXTRAS.ibarablk_u2, "Copied unchanged"],
+    ["u24", EXTRAS.u24, "Copied unchanged"],
+  ];
+  const PATCHED = ["ibarablk_u4", "u23"];
+  const state = { entries: {}, zipBuf: null, srcName: "", inputs: null, result: null, isDefault: true };
+
+  // ---------- zip reading ----------
+  function readZipDir(buf) {
+    const u8 = new Uint8Array(buf), dv = new DataView(buf);
+    let eocd = -1;
+    for (let i = u8.length - 22; i >= Math.max(0, u8.length - 65557); i--) {
+      if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+    }
+    if (eocd < 0) throw new Error("This file is not a readable zip.");
+    const count = dv.getUint16(eocd + 10, true);
+    let p = dv.getUint32(eocd + 16, true);
+    if (p === 0xFFFFFFFF) throw new Error("Zip64 archives are not supported. Re-zip the romset normally.");
+    const list = [];
+    for (let k = 0; k < count; k++) {
+      if (dv.getUint32(p, true) !== 0x02014b50) throw new Error("The zip directory is damaged.");
+      const e = {
+        flags: dv.getUint16(p + 8, true), method: dv.getUint16(p + 10, true),
+        crc: dv.getUint32(p + 16, true), csize: dv.getUint32(p + 20, true), size: dv.getUint32(p + 24, true),
+        local: dv.getUint32(p + 42, true),
+      };
+      const nl = dv.getUint16(p + 28, true), xl = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true);
+      e.path = new TextDecoder().decode(u8.subarray(p + 46, p + 46 + nl));
+      e.name = e.path.replace(/\\/g, "/").split("/").pop();
+      p += 46 + nl + xl + cl;
+      if (!e.name || e.path.endsWith("/")) continue;
+      const lp = e.local;
+      e.dataStart = lp + 30 + dv.getUint16(lp + 26, true) + dv.getUint16(lp + 28, true);
+      list.push(e);
+    }
+    return list;
+  }
+  async function streamBytes(stream) {
+    return new Uint8Array(await new Response(stream).arrayBuffer());
+  }
+  async function zipEntryData(buf, e) {
+    const raw = new Uint8Array(buf, e.dataStart, e.csize);
+    if (e.method === 0) return raw.slice();
+    if (e.method === 8) return streamBytes(new Blob([raw]).stream().pipeThrough(new DecompressionStream("deflate-raw")));
+    throw new Error(`${e.name} uses an unsupported compression method (${e.method}).`);
+  }
+
+  // ---------- zip writing ----------
+  const DOS_TIME = (23 << 11) | (32 << 5), DOS_DATE = ((1996 - 1980) << 9) | (12 << 5) | 24;
+  async function deflateRaw(u8) {
+    return streamBytes(new Blob([u8]).stream().pipeThrough(new CompressionStream("deflate-raw")));
+  }
+  // items: {name, method, crc, size, data(compressed bytes)}
+  function writeZip(items) {
+    const parts = [], central = [];
+    let offset = 0;
+    for (const it of items) {
+      const name = new TextEncoder().encode(it.name);
+      const h = new DataView(new ArrayBuffer(30));
+      h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0, true);
+      h.setUint16(8, it.method, true); h.setUint16(10, DOS_TIME, true); h.setUint16(12, DOS_DATE, true);
+      h.setUint32(14, it.crc, true); h.setUint32(18, it.data.length, true); h.setUint32(22, it.size, true);
+      h.setUint16(26, name.length, true); h.setUint16(28, 0, true);
+      parts.push(h, name, it.data);
+      const c = new DataView(new ArrayBuffer(46));
+      c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0, true);
+      c.setUint16(10, it.method, true); c.setUint16(12, DOS_TIME, true); c.setUint16(14, DOS_DATE, true);
+      c.setUint32(16, it.crc, true); c.setUint32(20, it.data.length, true); c.setUint32(24, it.size, true);
+      c.setUint16(28, name.length, true); c.setUint32(42, offset, true);
+      central.push(c, name);
+      offset += 30 + name.length + it.data.length;
+    }
+    const cdSize = central.reduce((s, x) => s + x.byteLength, 0);
+    const end = new DataView(new ArrayBuffer(22));
+    end.setUint32(0, 0x06054b50, true); end.setUint16(8, items.length, true); end.setUint16(10, items.length, true);
+    end.setUint32(12, cdSize, true); end.setUint32(16, offset, true);
+    return new Blob([...parts, ...central, end], { type: "application/zip" });
+  }
+
+  // ---------- step 2: checking ----------
+  function renderCheck(rows) {
+    $("check-body").innerHTML = "";
+    for (const [name, exp, role] of ROWS) {
+      const r = rows ? rows[name] : null;
+      const tr = document.createElement("tr");
+      let found = "&mdash;", pill = '<span class="pill">Waiting</span>';
+      if (rows) {
+        if (!r) pill = PATCHED.includes(name) ? '<span class="pill bad">Missing</span>' : '<span class="pill warn">Not in input</span>';
+        else {
+          const crcOk = r.crc === exp.crc && r.size === exp.size;
+          found = `<span class="${crcOk ? "" : "mismatch"}">${r.crc}</span>`;
+          if (r.size !== exp.size) pill = `<span class="pill bad">Wrong size (${fmtSize(r.size)})</span>`;
+          else if (!crcOk) pill = '<span class="pill bad">Wrong CRC</span>';
+          else pill = `<span class="pill ok">${r.verified ? "OK, data verified" : "OK"}</span>`;
+          if (r.renamedFrom) pill += `<span class="role">found as ${escapeHtml(r.renamedFrom)}</span>`;
+        }
+      }
+      tr.innerHTML = `<td class="mono">${name}<span class="role">${role}</span></td><td class="mono">${fmtSize(exp.size)}</td>` +
+        `<td class="mono">${exp.crc}</td><td class="mono">${found}</td><td>${pill}</td>`;
+      $("check-body").appendChild(tr);
+    }
+  }
+  const escapeHtml = (s) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  function msg(el, cls, text) { el.className = "notice" + (cls ? " " + cls : ""); el.textContent = text; el.hidden = false; }
+
+  function pickEntries(list) {
+    // match by file name first, then by CRC (renamed files)
+    const all = { ...INPUTS, ...EXTRAS }, out = {};
+    for (const e of list) { const n = e.name.toLowerCase(); if (n in all && !out[n]) out[n] = e; }
+    for (const e of list) {
+      for (const [n, exp] of Object.entries(all)) {
+        if (!out[n] && e.crc === parseInt(exp.crc, 16) && e.size === exp.size) { out[n] = e; e.renamedFrom = e.path; }
+      }
+    }
+    return out;
+  }
+
+  async function loadFiles(files) {
+    resetOutput();
+    state.inputs = null; state.zipBuf = null; state.entries = {};
+    $("build-row").hidden = true;
+    files = Array.from(files);
+    if (!files.length) return;
+    $("src").hidden = false;
+    $("src").textContent = files.map((f) => f.name).join(", ");
+    msg($("check-msg"), "", "Reading…");
+    try {
+      let list;
+      const isZip = files.length === 1 && (/\.zip$/i.test(files[0].name) ||
+        new Uint32Array((await files[0].slice(0, 4).arrayBuffer()).slice(0))[0] === 0x04034b50);
+      if (isZip) {
+        state.zipBuf = await files[0].arrayBuffer();
+        list = readZipDir(state.zipBuf);
+      } else {
+        const sizes = new Set(ROWS.map((r) => r[1].size));
+        list = [];
+        for (const f of files) {
+          if (!sizes.has(f.size)) continue;
+          const data = new Uint8Array(await f.arrayBuffer());
+          list.push({ name: f.name, path: f.name, size: f.size, crc: crc32(data), data });
+        }
+      }
+      const picked = pickEntries(list);
+      const rows = {};
+      for (const [n, e] of Object.entries(picked)) rows[n] = { crc: hex8(e.crc), size: e.size, renamedFrom: e.renamedFrom && e.renamedFrom !== n ? e.renamedFrom : null };
+      state.entries = picked;
+      renderCheck(rows);
+
+      const bad = PATCHED.filter((n) => !rows[n] || rows[n].crc !== INPUTS[n].crc || rows[n].size !== INPUTS[n].size);
+      if (bad.length) {
+        const missing = bad.filter((n) => !rows[n]);
+        msg($("check-msg"), "bad", missing.length
+          ? `${missing.join(" and ")} ${missing.length > 1 ? "were" : "was"} not found. Load the ibarablk romset that contains ${missing.length > 1 ? "them" : "it"}.`
+          : `${bad.join(" and ")} ${bad.length > 1 ? "don't" : "doesn't"} match the expected CRC32. This dump can't be patched; a different or damaged file would give a broken result.`);
+        return;
+      }
+      // pull the two files out and verify the actual data, not just the zip header
+      const inputs = {};
+      for (const n of PATCHED) {
+        const e = picked[n];
+        const data = e.data || await zipEntryData(state.zipBuf, e);
+        if (hex8(crc32(data)) !== INPUTS[n].crc || await sha1(data) !== INPUTS[n].sha1) {
+          rows[n].crc = hex8(crc32(data)); renderCheck(rows);
+          msg($("check-msg"), "bad", `${n} is damaged inside the zip: its data doesn't match the CRC32 or SHA-1. Try a fresh copy of the romset.`);
+          return;
+        }
+        rows[n].verified = true;
+        inputs[n] = data;
+      }
+      renderCheck(rows);
+      state.inputs = inputs;
+      const extrasOk = Object.keys(EXTRAS).every((n) => rows[n] && rows[n].crc === EXTRAS[n].crc);
+      const extrasBad = Object.keys(EXTRAS).filter((n) => rows[n] && rows[n].crc !== EXTRAS[n].crc);
+      state.canRomset = !!state.zipBuf && extrasOk;
+      if (extrasBad.length) msg($("check-msg"), "warn", `ibarablk_u4 and u23 are correct, so the Show Time files will be built. Note: ${extrasBad.join(" and ")} ${extrasBad.length > 1 ? "have" : "has"} the wrong CRC32. ${extrasBad.length > 1 ? "They aren't" : "It isn't"} changed by the patch, but your romset may not run in MAME.`);
+      else if (!extrasOk) msg($("check-msg"), "warn", "ibarablk_u4 and u23 are correct, so the Show Time files will be built. ibarablk_u2 and u24 weren't in this input; they aren't changed by the patch.");
+      else msg($("check-msg"), "ok", "All four files match.");
+      await build();
+    } catch (err) {
+      msg($("check-msg"), "bad", err.message || String(err));
+    }
+  }
+
+  // ---------- step 3: build (in a worker) ----------
+  const workerSrc = $("core").textContent + `
+    self.onmessage = async (ev) => {
+      const { u4, u23, swaps, boot } = ev.data;
+      try {
+        const r = await buildShowTime(new Uint8Array(u4), new Uint8Array(u23), swaps, boot,
+          (f, label) => self.postMessage({ progress: f, label }));
+        self.postMessage({ done: true, u4: r.u4, u23: r.u23, notes: r.notes }, [r.u4.buffer, r.u23.buffer]);
+      } catch (e) { self.postMessage({ error: e.message || String(e) }); }
+    };`;
+  let workerUrl = null;
+  function runBuild(opts) {
+    workerUrl = workerUrl || URL.createObjectURL(new Blob([workerSrc], { type: "text/javascript" }));
+    return new Promise((resolve, reject) => {
+      const w = new Worker(workerUrl);
+      const bar = $("progress").firstElementChild;
+      w.onmessage = (ev) => {
+        const m = ev.data;
+        if (m.progress !== undefined) { bar.style.width = (m.progress * 100).toFixed(1) + "%"; $("build-status").textContent = m.label + "…"; }
+        else { w.terminate(); m.error ? reject(new Error(m.error)) : resolve(m); }
+      };
+      w.onerror = (e) => { w.terminate(); reject(new Error(e.message || "The build stopped unexpectedly.")); };
+      const u4 = state.inputs.ibarablk_u4.slice(), u23 = state.inputs.u23.slice();
+      w.postMessage({ u4: u4.buffer, u23: u23.buffer, swaps: opts.swaps, boot: opts.boot }, [u4.buffer, u23.buffer]);
+    });
+  }
+
+  async function build() {
+    const opts = { swaps: DEFAULT_SWAPS, boot: DEFAULT_BOOT_TEXT };
+    resetOutput();
+    $("build-row").hidden = false; $("progress").hidden = false;
+    try {
+      const r = await runBuild(opts);
+      const def = true;
+      const res = { ibarablk_u4: r.u4, u23: r.u23 };
+      $("out-body").innerHTML = "";
+      let allOk = true;
+      for (const n of PATCHED) {
+        const crc = hex8(crc32(res[n])), h = await sha1(res[n]);
+        const ok = !def || (crc === DEFAULT_OUTPUTS[n].crc && h === DEFAULT_OUTPUTS[n].sha1);
+        allOk = allOk && ok;
+        const pill = !def ? '<span class="pill warn">Custom build</span>' : ok ? '<span class="pill ok">Matches Show Time</span>' : '<span class="pill bad">Mismatch</span>';
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td class="mono">${n}</td><td class="mono">${crc}</td><td class="sha">${h}</td><td>${pill}</td>`;
+        $("out-body").appendChild(tr);
+      }
+      if (!allOk) throw new Error("The result doesn't match the known Show Time checksums. Please report this.");
+      state.result = res; state.isDefault = def;
+      const notes = r.notes.slice();
+      if (!def) notes.unshift("Custom build: the repack was verified, but these files won't match the published Show Time CRCs.");
+      if (notes.length) msg($("out-notes"), "warn", notes.join(" "));
+      $("build-status").textContent = "Built and verified against the Show Time checksums.";
+      $("dl-patched").disabled = false;
+      $("dl-raw-row").hidden = !!window.claude;
+    } catch (err) {
+      $("build-status").textContent = "";
+      msg($("out-notes"), "bad", err.message || String(err));
+    } finally {
+      $("progress").hidden = true; $("progress").firstElementChild.style.width = "0";
+    }
+  }
+
+  function resetOutput(note) {
+    state.result = null;
+    $("out-body").innerHTML = `<tr><td class="mono">ibarablk_u4</td><td class="mono">${DEFAULT_OUTPUTS.ibarablk_u4.crc}</td><td class="sha">${DEFAULT_OUTPUTS.ibarablk_u4.sha1}</td><td><span class="pill">Expected</span></td></tr>` +
+      `<tr><td class="mono">u23</td><td class="mono">${DEFAULT_OUTPUTS.u23.crc}</td><td class="sha">${DEFAULT_OUTPUTS.u23.sha1}</td><td><span class="pill">Expected</span></td></tr>`;
+    $("dl-patched").disabled = true; $("dl-raw-row").hidden = true;
+    if (note) msg($("out-notes"), "", note); else $("out-notes").hidden = true;
+  }
+
+  // ---------- step 4: downloads ----------
+  async function patchedItems() {
+    const items = {};
+    for (const n of PATCHED) {
+      const data = state.result[n];
+      items[n] = { name: n, method: 8, crc: crc32(data), size: data.length, data: await deflateRaw(data) };
+    }
+    return items;
+  }
+  async function save(filename, blob, btn) {
+    const old = btn.textContent;
+    btn.disabled = true; btn.textContent = "Preparing…";
+    try {
+      if (window.claude && window.claude.use) {
+        const dl = await window.claude.use("downloads");
+        if (!dl) { msg($("out-notes"), "warn", "Downloads aren't available in this view. Open the page in a browser to save the files."); return; }
+        try { await dl.save({ filename, data: blob }); }
+        catch (e) { if (e && e.code !== "declined") msg($("out-notes"), "warn", "The file couldn't be saved: " + (e.message || e.code)); }
+      } else {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob); a.download = filename;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+      }
+    } finally { btn.textContent = old; btn.disabled = false; }
+  }
+  $("dl-patched").addEventListener("click", async (ev) => {
+    const btn = ev.currentTarget;
+    const p = await patchedItems();
+    await save("ibarablk_showtime_files.zip", writeZip(PATCHED.map((n) => p[n])), btn);
+  });
+  $("dl-u4").addEventListener("click", (ev) => save("ibarablk_u4", new Blob([state.result.ibarablk_u4]), ev.currentTarget));
+  $("dl-u23").addEventListener("click", (ev) => save("u23", new Blob([state.result.u23]), ev.currentTarget));
+
+  // ---------- file input ----------
+  const drop = $("drop");
+  $("file").addEventListener("change", (e) => loadFiles(e.target.files));
+  ["dragenter", "dragover"].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.add("over"); }));
+  ["dragleave", "drop"].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
+  drop.addEventListener("drop", (e) => loadFiles(e.dataTransfer.files));
+
+  if (typeof DecompressionStream === "undefined" || typeof CompressionStream === "undefined") {
+    msg($("check-msg"), "bad", "This browser is too old to read zip files here. Use a current version of Chrome, Edge, Firefox or Safari.");
+  }
+  renderCheck(null);
+  resetOutput();
+})();
+</script>
+
+</body></html>
