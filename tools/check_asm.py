@@ -17,7 +17,11 @@ ok = True
 for name, at, code in (("menu_line.s", sp.TRAMPOLINE, sp.TRAMPOLINE_CODE),
                        ("bomb_spawn.s", sp.SPAWN_CODE_AT, sp.SPAWN_CODE),
                        ("bomb_use.s", sp.BOMB_CODE_AT, sp.BOMB_CODE),
-                       ("p2_toggle.s", sp.INPUT_AT, sp.INPUT_CODE)):
+                       ("p2_toggle.s", sp.INPUT_AT, sp.INPUT_CODE),
+                       ("select_mark.s", sp.MARK_AT, sp.MARK_CODE),
+                       ("bomb_keep.s", sp.KEEP_AT, sp.KEEP_CODE),
+                       ("new_game.s", sp.NEWGAME_AT, sp.NEWGAME_CODE),
+                       ("hadou_keep.s", sp.HADOU_AT, sp.HADOU_CODE)):
     built = assemble(at, (here.parent / "asm" / name).read_text())
     same = built == code
     ok &= same

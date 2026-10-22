@@ -62,6 +62,10 @@ def assemble(base, src):
         elif op == "mov.b" and re.fullmatch(r"@\(\d+,r\d+\)", a[1]):     # mov.b r0,@(d,Rn)
             d, n = re.fullmatch(r"@\((\d+),(r\d+)\)", a[1]).groups(); assert a[0] == "r0"
             emit(0x8000 | _r(n) << 4 | int(d))
+        elif op == "mov.l" and a[1].startswith("@-"):                   # mov.l Rm,@-Rn
+            emit(0x2006 | _r(a[1][2:]) << 8 | _r(a[0]) << 4)
+        elif op == "mov.l" and a[0].startswith("@") and a[0].endswith("+"):   # mov.l @Rm+,Rn
+            emit(0x6006 | _r(a[1]) << 8 | _r(a[0][1:-1]) << 4)
         elif op in ("mov.b", "mov.l") and a[0].startswith("@"):         # mov.x @Rm,Rn
             emit(0x6000 | _r(a[1]) << 8 | _r(a[0][1:]) << 4 | {"mov.b": 0, "mov.l": 2}[op])
         elif op in ("mov.b", "mov.l") and a[1].startswith("@"):         # mov.x Rm,@Rn
