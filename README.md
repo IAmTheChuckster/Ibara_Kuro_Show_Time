@@ -1,10 +1,10 @@
 # Ibara Kuro Show Time
 
 ## To do
-1. Replace Warning Screen
-2. lower the countdown volume by half, if the chime and laughter are separate then raise the laughter volume.
-3. Select character by pressing the start button
-4. Add infinite bomba in the Service menu
+1. ~~Replace Warning Screen~~ (done)
+2. lower the countdown volume by half (done: the beep is at half volume), if the chime and laughter are separate then raise the laughter volume (they are separate effects; laughter not changed yet).
+3. ~~Select character by pressing the start button~~ (done)
+4. ~~Add infinite bomba in the Service menu~~ (done: "bomb counts" in DIP SWITCH SETTING)
 5. upload skill
 6. add mra to patcher
 
@@ -22,6 +22,16 @@ It changes the songs so it plays Ibara loop one instead of loop two tracks from 
 | Bonds of Steel     | Show Time     | 
 | Air Pollution      | Sky High      | 
 | The Family's Work  | Robot No28    | 
+
+Other changes:
+
+| Where | Change |
+|---|---|
+| Warning screen | New text: *This project is unofficial and is not affiliated with, endorsed by, or authorized by CAVE. All rights to the original game and its associated intellectual property remain with their respective rights holders. Have fun!!!* Bottom line: `2026/10/22 SHOW TIME` |
+| Title screen | `SALE BY AMI` → `NOT FOR SALE` |
+| Test mode → DIP SWITCH SETTING | New **bomb counts** line under player counts: `1` (default), `2`, `3`, `4`, `FULL`, `INFINITE`. Sets the full bombs you have at the start and after each respawn (you never get fewer than the normal game gives). `FULL` = 4 bombs and all 40 small bombs; `INFINITE` = 4 bombs that are never used up. Saved with the other settings. |
+| Ship select | **Start** switches between Bond (Player 1) and Dyne (Player 2); press again to switch back. Your Player 1 controls fly whichever you pick. The empty panel no longer shows credit text. Only in a one-player game; a second player can still join normally. |
+| Sound | The countdown beep (coin countdown, continue, name entry) is at half volume. The laughs are separate sounds and are unchanged. |
 
 ## Patching the game
 The following source files are required
@@ -44,10 +54,13 @@ python showtime_patch.py --help           # more options
 ### Result
 | File Name   |   CRC    |
 |-------------|----------|
-| ibarashow_u4  | 07243591 |
+| ibarashow_u4  | b4eb1b11 |
 | ibarashow_u23 | 69403f24 |
 
 `ibarablk_u2` and `u24` are unchanged (copied into the complete romset).
+
+### For developers
+The new code is in `asm/` (SH-3 assembly) and is checked against the bytes in `showtime_patch.py` with `python tools/check_asm.py`. `tools/gen_web_extras.py` regenerates the edit table used by `index.html`, so the web patcher and the Python script always produce the same files.
 
 ## Testing
 This patch was tested with MAME 0.289 and [CV1k core for the MiSTer FPGA by Raki](https://www.patreon.com/c/ikamusume/posts)<br>
