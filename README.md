@@ -12,7 +12,7 @@ This repository holds only source, tools and notes. **No ROM data is included**;
 ## About this project
 Why did I make this? Because it's fun and for my own personal research to see the capabilities of Claude.
 
-## What it changes
+## Change notes
 It changes the songs so it plays Ibara loop one instead of loop two tracks from Ibara. Why would anyone want to do this? Because the music from loop one is better.
 
 | Black Label song   | Plays instead | 
