@@ -1,9 +1,4 @@
 # Ibara Kuro Show Time
-
-## To do
-1. upload skill
-2. ~~fix infinite hadougun glitch~~ (done)
-
 A gameplay patch for Ibara Kuro Black Label (2006/02/06. MASTER VER.)<br> 
 This repository holds only source, tools and notes. **No ROM data is included**; you patch your own dump.
 
