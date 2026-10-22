@@ -143,13 +143,13 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     <div class="row" id="dl-row">
       <button class="primary" id="dl-patched" type="button" disabled>Download patched files (.zip)</button>
       <button class="secondary" id="dl-romset" type="button" disabled>Download complete romset (ibarashow.zip)</button>
-      <button class="secondary" id="dl-mra" type="button">Download Ibara Show Time.mra</button>
+      <button class="secondary" id="dl-mra" type="button">Download Ibara Kuro Show Time.mra</button>
     </div>
     <div class="row" id="dl-raw-row" hidden>
       <button class="secondary" id="dl-u4" type="button">ibarashow_u4</button>
       <button class="secondary" id="dl-u23" type="button">ibarashow_u23</button>
     </div>
-    <p class="hint" id="dl-hint"><strong>Patched files</strong> gives just <span class="mono">ibarashow_u4</span> and <span class="mono">ibarashow_u23</span>. <strong>Complete romset</strong> adds <span class="mono">ibarablk_u2</span> and <span class="mono">u24</span> from your zip, unchanged. Your original files are never modified. <strong>Ibara Show Time.mra</strong> is for the MiSTer CV1k core and expects the complete romset as <span class="mono">ibarashow.zip</span>.</p>
+    <p class="hint" id="dl-hint"><strong>Patched files</strong> gives just <span class="mono">ibarashow_u4</span> and <span class="mono">ibarashow_u23</span>. <strong>Complete romset</strong> adds <span class="mono">ibarablk_u2</span> and <span class="mono">u24</span> from your zip, unchanged. Your original files are never modified. <strong>Ibara Kuro Show Time.mra</strong> is for the MiSTer CV1k core and expects the complete romset as <span class="mono">ibarashow.zip</span>.</p>
   </section>
 
   <footer>No ROM data is included in this page. It only rebuilds files from the dump you supply.</footer>
@@ -915,7 +915,7 @@ async function buildShowTime(u4, u23, swaps, bootText, progress = () => {}) {
 </misterromdescription>
 `;
   }
-  $("dl-mra").addEventListener("click", (ev) => save("Ibara Show Time.mra", new Blob([mraText()], { type: "application/xml" }), ev.currentTarget));
+  $("dl-mra").addEventListener("click", (ev) => save("Ibara Kuro Show Time.mra", new Blob([mraText()], { type: "application/xml" }), ev.currentTarget));
   $("dl-u4").addEventListener("click", (ev) => save("ibarashow_u4", new Blob([state.result.ibarablk_u4], { type: "application/octet-stream" }), ev.currentTarget));
   $("dl-u23").addEventListener("click", (ev) => save("ibarashow_u23", new Blob([state.result.u23], { type: "application/octet-stream" }), ev.currentTarget));
 

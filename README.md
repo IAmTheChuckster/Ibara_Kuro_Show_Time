@@ -44,7 +44,7 @@ The following source files are required
 Open the **[Show Time Patcher](https://iamthechuckster.github.io/Ibara_Kuro_Show_Time/)** (`index.html`) and drop in your `ibarablk.zip`. It checks the file names and CRCs, builds the patched files automatically, and lets you download just the patched files or a complete `ibarashow.zip` romset. Everything runs in your browser; nothing is uploaded.
 
 ### MiSTer
-`Ibara Show Time.mra` (also a download button on the web patcher) is for the CV1k core. It expects the complete romset as `ibarashow.zip` (`ibarashow_u4` `b4eb1b11`, `ibarashow_u23` `69403f24`, `ibarablk_u2` `5e46be44`, `u24` `d11ab6b6`).
+`Ibara Kuro Show Time.mra` (also a download button on the web patcher) is for the CV1k core. It expects the complete romset as `ibarashow.zip` (`ibarashow_u4` `b4eb1b11`, `ibarashow_u23` `69403f24`, `ibarablk_u2` `5e46be44`, `u24` `d11ab6b6`).
 
 ### With Python
 Requires Python 3.8+ (standard library only).
