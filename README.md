@@ -1,12 +1,7 @@
 # Ibara Kuro Show Time
 
 ## To do
-1. ~~Replace Warning Screen~~ (done)
-2. lower the countdown volume by half (done: the beep is at half volume), if the chime and laughter are separate then raise the laughter volume (they are separate effects; laughter not changed yet).
-3. ~~Select character by pressing the start button~~ (done)
-4. ~~Add infinite bomba in the Service menu~~ (done: "bomb counts" in DIP SWITCH SETTING)
-5. upload skill
-6. add mra to patcher
+1. upload skill
 
 A gameplay patch for Ibara Kuro Black Label (2006/02/06. MASTER VER.)<br> 
 This repository holds only source, tools and notes. **No ROM data is included**; you patch your own dump.
