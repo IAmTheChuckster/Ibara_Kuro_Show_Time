@@ -1,12 +1,23 @@
 #!/usr/bin/env python3
 """Build the Ibara Kuro "Show Time" ROMs from your own Ibara Kuro Black Label dump.
 
-    ibarablk_u4  ->  ibarashow_u4   (Show Time version: play times, titles, boot text)
-    u23          ->  ibarashow_u23  (Show Time version: sound-chip sequence table)
+    ibarablk_u4  ->  ibarashow_u4   (program)
+    u23          ->  ibarashow_u23  (sound-chip sequence table)
 
-No ROM data is stored in this script. Every change is made from data that is
-already in your dump: songs that Black Label doesn't use are still present in
-its sound ROM, so a swap only re-points a music slot at them.
+What the Show Time build changes:
+  * music: Bonds of Steel -> Show Time, Air Pollution -> Sky High,
+    The Family's Work -> Robot No28 (play times and titles follow)
+  * warning screen: new disclaimer text; boot line "2026/10/22 SHOW TIME"
+  * title screen: "SALE BY AMI" -> "NOT FOR SALE"
+  * test mode, DIP SWITCH SETTING: new "bomb counts" line (1, 2, 3, 4, FULL,
+    INFINITE; default 1): full bombs at the start and after each respawn
+  * ship select: Start switches between Bond (Player 1) and Dyne (Player 2);
+    the empty panel no longer shows credit text
+  * coin, continue and name-entry countdown beep at half volume
+
+No ROM data is stored in this script. Songs that Black Label doesn't use are
+still present in its sound ROM, so a swap only re-points a music slot at them;
+everything else is new code and text written into free space.
 
 Usage:
     python showtime_patch.py <input> [-o OUTPUT_DIR] [--zip ROMSET.zip]
@@ -31,7 +42,7 @@ DEFAULT_SWAPS = [                    # (Black Label song to replace, song to pla
     ("Air Pollution", "Sky High"),
     ("The Family's Work", "Robot No28"),
 ]
-DEFAULT_BOOT_TEXT = "2026/10/12 SHOW TIME"   # boot screen line (was "2006/xx/xx. MASTER VER.")
+DEFAULT_BOOT_TEXT = "2026/10/22 SHOW TIME"   # boot screen line (was "2006/xx/xx. MASTER VER.")
 
 # Expected checksums -------------------------------------------------------
 INPUTS = {   # name: (size, sha1)
@@ -39,7 +50,7 @@ INPUTS = {   # name: (size, sha1)
     "u23":         (4194304, "0556e771cc02638bf8814315ba671c2d442594f1"),
 }
 DEFAULT_OUTPUTS = {   # sha1 of the result when the default settings are used
-    "ibarablk_u4": "82403646d72070ea3207d464a25fa8c2ff90f943",   # crc32 07243591
+    "ibarablk_u4": "b85632215f87553ac6807b972affdceaba94a4fc",   # crc32 b4eb1b11
     "u23":         "51f6536b0845fc26f266761ae344992fb38ffee8",   # crc32 69403f24
 }
 UNPACKED_PROGRAM_SHA1 = "531fc52e0d84866bca8509f36a9c9e6319667bea"   # original, unpacked
@@ -77,9 +88,120 @@ BOOT_LINES = (                              # boot text, one per region
     (0x0C0C4E08, b"    2006/xx/xx. MASTER VER.   "),
     (0x0C0C4F88, b"    200x/xx/xx. MASTER VER.   "),
 )
+WARNING_TEXT = [   # replaces the "for use in Japan only" screen (max 27 chars per line, 11 lines)
+    "THIS PROJECT IS UNOFFICIAL",
+    "AND IS NOT AFFILIATED WITH,",
+    "ENDORSED BY, OR AUTHORIZED",
+    "BY CAVE. ALL RIGHTS TO THE",
+    "ORIGINAL GAME AND ITS",
+    "ASSOCIATED INTELLECTUAL",
+    "PROPERTY REMAIN WITH THEIR",
+    "RESPECTIVE RIGHTS HOLDERS.",
+    "",
+    "HAVE FUN!!!",
+]
+WARNING_BLOCKS = ((0x0C0C4C68, 12), (0x0C0C4E28, 11))   # 32-byte lines (Japan / export boards; the
+                                                          # export block's 12th slot is its boot line)
+WARNING_FIRST = (b"   THIS GAME IS FOR USE IN    ", b"   ALL COUNTRIES EXCEPTING    ")
+# Title screen: "SALE BY AMI" -> "NOT FOR SALE". The new text is one byte longer than the old
+# slot, so it is stored in the (now blank) last line of the Japan warning block, behind a leading
+# NUL so the warning screen still prints that line as empty, and the title code is re-pointed to it.
+SALE_TEXT = b"NOT FOR SALE"
+SALE_HOME = 0x0C0C4C68 + 32 * 11          # line 12 of the Japan warning block
+SALE_PTR = (0x0C06A688, 0x0C173A60)       # literal-pool word used by the title print call (old value)
+# --- DIP menu: "bomb counts" ----------------------------------------------------------
+# The menu has a hidden line (index 12, "difficulty2", variable 0x0C23DEA4) that the game saves,
+# loads and range-checks but never uses in play. It becomes "bomb counts" (0=1 ... 3=4, 4=FULL,
+# 5=INFINITE). Menu indexes 12-14 are reordered so the lines read extend / player counts /
+# bomb counts, and a small routine in unused RAM draws the extra line.
+def _w(v): return v.to_bytes(4, "big")
+BOMB_VAR = 0x0C23DEA4
+BOMB_DRAW = 0x0C068920                    # existing "difficulty2" line-draw routine
+TRAMPOLINE = 0x0C05B700                   # unused tail of a zero-filled table area
+RANK_DRAW = 0x0C065EA0                    # "ranking save" line-draw routine
+BOMB_VALUES = ["1", "2", "3", "4", "FULL", "INFINITE", "INFINITE", "INFINITE"]
+MENU_EDITS = [   # (address, original bytes, new bytes)
+    (0x0C0654B0, _w(RANK_DRAW), _w(TRAMPOLINE)),          # menu calls the routine instead of "ranking save"
+    (0x0C06538A, b"\xe4\x0c", b"\xe4\x0e"),                # player counts: row 12 -> 14
+    (0x0C06539A, b"\xe4\x0e", b"\xe4\x10"),                # extend: row 14 -> 16
+    (0x0C068934, b"\x78\x0c", b"\x78\x0e"),                # value column lines up with player counts
+    (0x0C173800, b"difficulty2\0", b"bomb counts\0"),      # label
+    (0x0C1731FC + 4 * 12, _w(0x0C23DEA4) + _w(0x0C234BA8) + _w(0x0C239483),
+                          _w(0x0C234BA8) + _w(0x0C239483) + _w(BOMB_VAR)),   # index -> variable
+    (0x0C17325C + 12, bytes([7, 18, 7]), bytes([18, 7, 5])),                  # index -> max value
+    (0x0C065B02, b"\x20\x40", b"\x20\x70"),                # default value 3 -> 0 (r7 = 0), i.e. "1"
+] + [(t + 13, b"\x0b", b"\x0c") for t in (0x0C173298, 0x0C1732C0, 0x0C1732E8, 0x0C173310)] \
+  + [(t + 11, b"\x0d", b"\x0c") for t in (0x0C1732AC, 0x0C1732D4, 0x0C1732FC, 0x0C173324)]
+TRAMPOLINE_CODE = bytes.fromhex(
+    "4f22" "d005" "400b" "0009"     # sts.l pr,@-r15 / mov.l RANK,r0 / jsr @r0 (row 10, col 3 from caller)
+    "d004" "e40c" "400b" "e503"     # mov.l BOMB,r0 / mov #12,r4 / jsr @r0 / mov #3,r5
+    "4f26" "000b" "0009" "0009"     # lds.l @r15+,pr / rts / nop
+) + _w(RANK_DRAW) + _w(BOMB_DRAW)
+BOMB_STRINGS = 0x0C17380C                 # 96 bytes of the old value strings, then the 8-entry table
+BOMB_TABLE = 0x0C17386C
+
+# --- Gameplay: apply "bomb counts" ----------------------------------------------------
+# Player data is at 0x0C29D1D8 + player * 0x2A0; +0x25D = full bombs (max 4), +0x25E = bomb
+# fragments (max 40). At game start and after each death the spawn code adds one full bomb.
+# Hook 1 (spawn): after that, full bombs = max(normal result, setting + 1); FULL / INFINITE give
+#   4 full bombs and 40 fragments.  Hook 2 (bomb): with INFINITE the full bomb is not used up.
+# Each hook is a bsr to a 12-byte stub in nearby function padding that jumps to a routine in
+# the unused RAM area.
+SPAWN_CODE_AT, BOMB_CODE_AT = 0x0C05B680, 0x0C05B6C0
+SPAWN_CODE = bytes.fromhex(
+    "2290" "2370" "d109" "6010"     # mov.b r9,@r2 (full) / mov.b r7,@r3 (frags) / mov.l SET,r1 / mov.b @r1,r0
+    "600c" "e104" "3012" "8907"     # extu.b r0,r0 / mov #4,r1 / cmp/hs r1,r0 / bt FULL
+    "7001" "6120" "611c" "3102"     # add #1,r0 / mov.b @r2,r1 / extu.b r1,r1 / cmp/hs r0,r1
+    "8900" "2200" "000b" "0009"     # bt (skip) / mov.b r0,@r2 / rts / nop
+    "e104" "2210" "e128" "000b"     # FULL: mov #4,r1 / mov.b r1,@r2 / mov #40,r1 / rts
+    "2310" "0009"                   #       mov.b r1,@r3 / pad
+) + BOMB_VAR.to_bytes(4, "big")
+BOMB_CODE = bytes.fromhex(
+    "d505" "6050" "600c" "e505"     # mov.l SET,r5 / mov.b @r5,r0 / extu.b r0,r0 / mov #5,r5
+    "3052" "8900" "2410" "9401"     # cmp/hs r5,r0 / bt (skip) / mov.b r1,@r4 (store full-1) / mov.w 0x2A0,r4
+    "000b" "0009" "02a0" "0000"     # rts / nop / .word 0x2A0 / pad
+) + BOMB_VAR.to_bytes(4, "big")
+STUB = bytes.fromhex("d001" "402b" "0009" "0009")     # mov.l @(4,pc),r0 / jmp @r0 / nop / nop / .long target
+GAME_EDITS = [   # (address, original bytes, new bytes)
+    (0x0C06D216, bytes.fromhex("790122902370"), bytes.fromhex("b0cd" "7901" "0009")),   # spawn: bsr stub1 / add #1,r9
+    (0x0C06D3B4, bytes.fromhex("0009" * 6), STUB + SPAWN_CODE_AT.to_bytes(4, "big")),
+    (0x0C0736B6, bytes.fromhex("24109421"), bytes.fromhex("b035" "0009")),             # bomb: bsr stub2
+    (0x0C073724, bytes.fromhex("0009" * 6), STUB + BOMB_CODE_AT.to_bytes(4, "big")),
+]
+
+# --- Ship select: Start switches to Dyne (the Player 2 character) ---------------------------
+# A routine hooked into the control reader (0x0C060E54) runs every frame. On the ship-select
+# screen (scene 0x0C2289ED = 2), when the only player is the one on the Player 1 controls, a new
+# press of Player 1 Start swaps the two player blocks (each side keeps its own pilot bit), flips
+# the active-player byte (0x0C239497) and toggles "Dyne mode" (0x0C05B4F0). That Start press is
+# never passed to the game. In Dyne mode the Player 1 controls (and Start) drive the Player 2
+# side and the Player 2 controls drive Player 1. Dyne mode is cleared on the title screen.
+# Source: asm/p2_toggle.s (assemble with tools/sh3asm.py)
+INPUT_AT = 0x0C05B500
+INPUT_STATE = 0x0C05B4F0                  # +0 Dyne mode flag, +1 previous Start state
+INPUT_CODE = bytes.fromhex("d22b6620dd2b60d0600cda2b63a0633ce50133568903e00180d1e0002d00e50233508b30db256cb06ccc650375013c508b296063c810042984d16503604380d16063cb1066032448891b25588b19d21cd31ce554355c64226832228223427204730445108bf7d2168427c9f78027d3158437cb08803760b0ca032b0060d0ca012d0060d0600c20088b03d40fd10fa00b0009d40ed10c6063c93088008904883089026063ca306603d009402b00090009a40001240c05b4f00c2289ed0c2394970c29d1d80c29d478a4000126a40001340c060e58")
+INPUT_EDITS = [
+    (0x0C060DD4, bytes.fromhex("0009" * 6), STUB + INPUT_AT.to_bytes(4, "big")),
+    (0x0C060E54, bytes.fromhex("d25d"), bytes.fromhex("afbe")),   # bra stub (delay slot: mov #16,r7)
+    (0x0C060E58, bytes.fromhex("6620"), bytes.fromhex("0009")),   # start/coin byte now comes from the routine
+    (0x0C060E5E, bytes.fromhex("7202"), bytes.fromhex("6243")),   # P1 port address from r4
+    (0x0C060E78, bytes.fromhex("da56"), bytes.fromhex("6a13")),   # P2 port address from r1
+    # ship select: no credit text on the empty panel ("PLEASE!", "INSERT COIN", "CREDIT n", free play)
+    (0x0C06DA5C, bytes.fromhex("4a0b"), bytes.fromhex("0009")),
+    (0x0C06DA68, bytes.fromhex("4a0b"), bytes.fromhex("0009")),
+    (0x0C06DA82, bytes.fromhex("4a0b"), bytes.fromhex("0009")),
+    (0x0C06DA9C, bytes.fromhex("400b"), bytes.fromhex("0009")),
+]
+
+# --- Sound: countdown beep at half volume ----------------------------------------------
+# Effect 0x5C ("continue") is the beep of the coin, continue and name-entry countdowns. Its
+# default volume in the effect volume table (0x0C206824 + effect) is 0xFC; the level is linear,
+# so 0x7E is exactly half (measured in MAME). The laughs (0x81, 0x97) are separate effects.
+BEEP_VOLUME = (0x0C206824 + 0x5C, 0xFC, 0x7E)
+
 BOOT_DATE_CALLS = (0x0C06BC82, 0x0C06BC8E)  # "print clock month/day" calls -> NOP
-ROMSET_EXTRAS = ("ibarablk_u2", "u24")
-OUT_NAMES = {"ibarablk_u4": "ibarashow_u4", "u23": "ibarashow_u23"}   # output file names      # unchanged romset files copied by --zip
+ROMSET_EXTRAS = ("ibarablk_u2", "u24")      # unchanged romset files copied by --zip
+OUT_NAMES = {"ibarablk_u4": "ibarashow_u4", "u23": "ibarashow_u23"}   # output file names
 SEQ_TABLE = 0x400                           # u23 sequence pointer table (sound-chip byte order)
 
 # ---------------------------------------------------------------------------
@@ -229,6 +351,80 @@ def title_fields(prog: bytes):
     return fields
 
 
+def apply_extras(orig: bytes, prog: bytearray):
+    """Fixed Show Time changes: warning screen, title text, DIP "bomb counts", bomb rules,
+    Dyne toggle on ship select, countdown beep volume. Every target is checked first."""
+    # warning screen
+    for (addr, lines), first in zip(WARNING_BLOCKS, WARNING_FIRST):
+        o = addr - RAM_BASE
+        if orig[o:o + 30] != first:
+            sys.exit("error: warning text not found where expected")
+        for k in range(lines):
+            text = WARNING_TEXT[k] if k < len(WARNING_TEXT) else ""
+            prog[o + 32 * k:o + 32 * k + 30] = ("   " + text).ljust(30).encode("ascii")
+
+    # title screen: "SALE BY AMI" -> "NOT FOR SALE"
+    o = SALE_HOME - RAM_BASE
+    prog[o:o + 32] = (b"\0" + b" " * 15 + SALE_TEXT).ljust(32, b"\0")
+    po = SALE_PTR[0] - RAM_BASE
+    if orig[po:po + 4] != SALE_PTR[1].to_bytes(4, "big"):
+        sys.exit("error: title credit pointer not found where expected")
+    prog[po:po + 4] = (SALE_HOME + 16).to_bytes(4, "big")
+
+    # DIP menu: bomb counts
+    for addr, old, new in MENU_EDITS:
+        o = addr - RAM_BASE
+        if orig[o:o + len(old)] != old:
+            sys.exit(f"error: menu data not found where expected ({addr:08X})")
+        prog[o:o + len(new)] = new
+    o = TRAMPOLINE - RAM_BASE
+    if any(orig[o:o + 0x34]):
+        sys.exit("error: free space for the menu routine is not empty")
+    prog[o:o + len(TRAMPOLINE_CODE)] = TRAMPOLINE_CODE
+    blob, ptrs = bytearray(), {}
+    for v in dict.fromkeys(BOMB_VALUES):
+        ptrs[v] = BOMB_STRINGS + len(blob)
+        blob += v.encode("ascii") + b"\0"
+        blob += b"\0" * (-len(blob) % 4)
+    o = BOMB_STRINGS - RAM_BASE
+    if orig[o:o + 12] != b"UNFORGETABLE":
+        sys.exit("error: difficulty2 values not found where expected")
+    prog[o:o + 96] = bytes(blob).ljust(96, b"\0")
+    o = BOMB_TABLE - RAM_BASE
+    prog[o:o + 32] = b"".join(_w(ptrs[v]) for v in BOMB_VALUES)
+
+    # gameplay: bomb counts
+    for at, code in ((SPAWN_CODE_AT, SPAWN_CODE), (BOMB_CODE_AT, BOMB_CODE)):
+        o = at - RAM_BASE
+        if any(orig[o:o + len(code)]):
+            sys.exit("error: free space for the bomb routines is not empty")
+        prog[o:o + len(code)] = code
+    for addr, old, new in GAME_EDITS:
+        o = addr - RAM_BASE
+        if orig[o:o + len(old)] != old:
+            sys.exit(f"error: game code not found where expected ({addr:08X})")
+        prog[o:o + len(new)] = new
+
+    # ship select: P2 toggle
+    o = INPUT_STATE - RAM_BASE
+    if any(orig[o:o + (INPUT_AT - INPUT_STATE) + len(INPUT_CODE)]):
+        sys.exit("error: free space for the select-screen routine is not empty")
+    o = INPUT_AT - RAM_BASE
+    prog[o:o + len(INPUT_CODE)] = INPUT_CODE
+    for addr, old, new in INPUT_EDITS:
+        o = addr - RAM_BASE
+        if orig[o:o + len(old)] != old:
+            sys.exit(f"error: control code not found where expected ({addr:08X})")
+        prog[o:o + len(new)] = new
+
+    # sound: countdown beep volume
+    addr, old, new = BEEP_VOLUME
+    if orig[addr - RAM_BASE] != old:
+        sys.exit("error: effect volume table not found where expected")
+    prog[addr - RAM_BASE] = new
+
+
+
 def build(u4: bytes, u23: bytes, swaps, boot_text):
     # --- sound ROM: re-point sequences --------------------------------------
     snd = wordswap(u23)
@@ -285,6 +481,8 @@ def build(u4: bytes, u23: bytes, swaps, boot_text):
             if orig[o:o + 2] != b"\x49\x0b":
                 sys.exit("error: boot date code not found where expected")
             prog[o:o + 2] = b"\x00\x09"   # nop: keep the clock date from overwriting the text
+
+    apply_extras(orig, prog)
 
     # --- program: repack ----------------------------------------------------
     print("  repacking program (takes about a minute)...", flush=True)
