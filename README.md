@@ -69,7 +69,7 @@ It may even work on a PCB but do so on your own risk.
 
 - [IAmTheChuckster](https://github.com/IAmTheChuckster)  project, testing
 - [Claude](https://claude.ai) (Anthropic)  reverse engineering and patcher code
-- Tested on the CV1k core for the MiSTer FPGA by [Raki](https://www.patreon.com/c/ikamusume/posts)
+- Tested on the [CV1k core for the MiSTer FPGA by Raki](https://www.patreon.com/c/ikamusume/posts)
 
 ## Disclaimer
 
