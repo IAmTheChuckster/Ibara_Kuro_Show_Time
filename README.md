@@ -5,6 +5,8 @@
 2. lower the countdown volume by half, if the chime and laughter are separate then raise the laughter volume.
 3. Select character by pressing the start button
 4. Add infinite bomba in the Service menu
+5. upload skill
+6. add mra to patcher
 
 A gameplay patch for Ibara Kuro Black Label (2006/02/06. MASTER VER.)<br> 
 This repository holds only source, tools and notes. **No ROM data is included**; you patch your own dump.
