@@ -13,7 +13,7 @@ What the Show Time build changes:
     INFINITE; default 1): full bombs at the start and after each respawn
   * ship select: Start switches between Bond (Player 1) and Dyne (Player 2);
     the empty panel no longer shows credit text
-  * coin, continue and name-entry countdown beep at half volume
+  * coin, continue and name-entry countdown beep at 40% volume
 
 No ROM data is stored in this script. Songs that Black Label doesn't use are
 still present in its sound ROM, so a swap only re-points a music slot at them;
@@ -50,7 +50,7 @@ INPUTS = {   # name: (size, sha1)
     "u23":         (4194304, "0556e771cc02638bf8814315ba671c2d442594f1"),
 }
 DEFAULT_OUTPUTS = {   # sha1 of the result when the default settings are used
-    "ibarablk_u4": "b85632215f87553ac6807b972affdceaba94a4fc",   # crc32 b4eb1b11
+    "ibarablk_u4": "796b4540f1cd0be2dbc5c3238b2a74ba042e8b8d",   # crc32 531d55da
     "u23":         "51f6536b0845fc26f266761ae344992fb38ffee8",   # crc32 69403f24
 }
 UNPACKED_PROGRAM_SHA1 = "531fc52e0d84866bca8509f36a9c9e6319667bea"   # original, unpacked
@@ -170,16 +170,28 @@ GAME_EDITS = [   # (address, original bytes, new bytes)
 ]
 
 # --- Ship select: Start switches to Dyne (the Player 2 character) ---------------------------
-# A routine hooked into the control reader (0x0C060E54) runs every frame. On the ship-select
-# screen (scene 0x0C2289ED = 2), when the only player is the one on the Player 1 controls, a new
-# press of Player 1 Start swaps the two player blocks (each side keeps its own pilot bit), flips
-# the active-player byte (0x0C239497) and toggles "Dyne mode" (0x0C05B4F0). That Start press is
-# never passed to the game. In Dyne mode the Player 1 controls (and Start) drive the Player 2
-# side and the Player 2 controls drive Player 1. Dyne mode is cleared on the title screen.
-# Source: asm/p2_toggle.s (assemble with tools/sh3asm.py)
+# A routine hooked into the control reader (0x0C060E54) runs every frame. The ship-select screen
+# marks itself active every frame (hook at 0x0C0B8390, asm/select_mark.s). While it is active and
+# the only player choosing is the one on the Player 1 controls, a new press of Player 1 Start
+# swaps the two player blocks (each side keeps its own pilot bit), flips the choosing-side byte
+# (0x0C239497) and toggles "Dyne mode" (0x0C05B4F0). That Start press is never passed to the
+# game. In Dyne mode the Player 1 controls (and Start) drive the Player 2 side and the Player 2
+# controls drive Player 1 (also during name entry). Dyne mode is cleared when a new game
+# starts; outside a game (mode byte 0x0C2A6D64 != 6) and the ship select the controls are
+# always normal.
+# Sources: asm/p2_toggle.s, asm/select_mark.s, asm/new_game.s (assemble with tools/sh3asm.py)
 INPUT_AT = 0x0C05B500
-INPUT_STATE = 0x0C05B4F0                  # +0 Dyne mode flag, +1 previous Start state
-INPUT_CODE = bytes.fromhex("d22b6620dd2b60d0600cda2b63a0633ce50133568903e00180d1e0002d00e50233508b30db256cb06ccc650375013c508b296063c810042984d16503604380d16063cb1066032448891b25588b19d21cd31ce554355c64226832228223427204730445108bf7d2168427c9f78027d3158437cb08803760b0ca032b0060d0ca012d0060d0600c20088b03d40fd10fa00b0009d40ed10c6063c93088008904883089026063ca306603d009402b00090009a40001240c05b4f00c2289ed0c2394970c29d1d80c29d478a4000126a40001340c060e58")
+INPUT_STATE = 0x0C05B4F0                  # +0 Dyne mode flag, +1 previous Start state, +2 select active
+MARK_AT = 0x0C05B600
+MARK_CODE = bytes.fromhex("d202e1032210d202000b61220c05b4f20c238014")
+NEWGAME_AT = 0x0C05B640                   # new game: Dyne mode off (asm/new_game.s)
+NEWGAME_CODE = bytes.fromhex("e00017012f16d103e0018011e0002100000b61f60c05b4f0")
+HADOU_AT = 0x0C05B660                     # INFINITE: the hadou gun spends nothing either (asm/hadou_keep.s)
+HADOU_CODE = bytes.fromhex("d0036000880589002410000b000900090c23dea4")
+KEEP_AT = 0x0C05B620                      # INFINITE: small bombs are not spent either (asm/bomb_keep.s)
+KEEP_CODE = bytes.fromhex("2f26d2056220622ce004320660308b00e000000b62f600090c23dea4")
+STUB_R1 = bytes.fromhex("d101" "412b" "0009" "0009")  # as STUB, but jumps via r1
+INPUT_CODE = bytes.fromhex("d22c6620dd2cd23360208806890584d220088b02e000a039000984d2600c2008893270ff80d260d0600cdb246cb06ccc650375013c508b296063c810042984d16503604380d16063cb1066032448891b25588b19d21ad31be554355c64226832228223427204730445108bf7d2148427c9f78027d3138437cb08803760b0ca032b0060d0ca012d0060d0600c20088b03d40dd10ea00b0009d40cd10b6063c93088008904883089026063ca306603d008402b0009a40001240c05b4f00c2394970c29d1d80c29d478a4000126a40001340c060e580c2a6d64")
 INPUT_EDITS = [
     (0x0C060DD4, bytes.fromhex("0009" * 6), STUB + INPUT_AT.to_bytes(4, "big")),
     (0x0C060E54, bytes.fromhex("d25d"), bytes.fromhex("afbe")),   # bra stub (delay slot: mov #16,r7)
@@ -191,13 +203,27 @@ INPUT_EDITS = [
     (0x0C06DA68, bytes.fromhex("4a0b"), bytes.fromhex("0009")),
     (0x0C06DA82, bytes.fromhex("4a0b"), bytes.fromhex("0009")),
     (0x0C06DA9C, bytes.fromhex("400b"), bytes.fromhex("0009")),
+    # ship select marks itself active every frame
+    (0x0C0B8384, bytes.fromhex("0009" * 6), STUB_R1 + MARK_AT.to_bytes(4, "big")),
+    (0x0C0B8390, bytes.fromhex("d26b6122"), bytes.fromhex("bff8" "0009")),   # bsr stub (redone in the routine)
+    # INFINITE: with 40 small bombs the game would spend those; report 0 so a full bomb is used
+    (0x0C0737B4, bytes.fromhex("0009" * 6), STUB + KEEP_AT.to_bytes(4, "big")),
+    (0x0C0736A8, bytes.fromhex("73026030"), bytes.fromhex("b084" "7302")),   # bsr stub / add #2,r3
+    # INFINITE: the hadou gun (bomb button held) uses its own copy of the bomb code
+    (0x0C0737D0, bytes.fromhex("73026030"), bytes.fromhex("bff0" "7302")),   # bsr bomb_keep stub / add #2,r3
+    (0x0C0737F4, bytes.fromhex("0009" * 6), STUB + HADOU_AT.to_bytes(4, "big")),
+    (0x0C0737DA, bytes.fromhex("2410"), bytes.fromhex("b00b")),   # bsr stub (store only if not INFINITE)
+    # new game: Dyne mode off
+    (0x0C06AE44, bytes.fromhex("0009" * 6), STUB + NEWGAME_AT.to_bytes(4, "big")),
+    (0x0C06A7B4, bytes.fromhex("1701"), bytes.fromhex("b346")),   # bsr stub (redone in the routine)
 ]
 
 # --- Sound: countdown beep at half volume ----------------------------------------------
 # Effect 0x5C ("continue") is the beep of the coin, continue and name-entry countdowns. Its
-# default volume in the effect volume table (0x0C206824 + effect) is 0xFC; the level is linear,
-# so 0x7E is exactly half (measured in MAME). The laughs (0x81, 0x97) are separate effects.
-BEEP_VOLUME = (0x0C206824 + 0x5C, 0xFC, 0x7E)
+# default volume in the effect volume table (0x0C206824 + effect) is 0xFC; the level is linear
+# (measured in MAME). 0x65 = 40% (half, then another 20% lower). The laughs (0x81, 0x97) are
+# separate effects.
+BEEP_VOLUME = (0x0C206824 + 0x5C, 0xFC, 0x65)
 
 BOOT_DATE_CALLS = (0x0C06BC82, 0x0C06BC8E)  # "print clock month/day" calls -> NOP
 ROMSET_EXTRAS = ("ibarablk_u2", "u24")      # unchanged romset files copied by --zip
@@ -411,6 +437,12 @@ def apply_extras(orig: bytes, prog: bytearray):
         sys.exit("error: free space for the select-screen routine is not empty")
     o = INPUT_AT - RAM_BASE
     prog[o:o + len(INPUT_CODE)] = INPUT_CODE
+    for at, code in ((MARK_AT, MARK_CODE), (KEEP_AT, KEEP_CODE), (NEWGAME_AT, NEWGAME_CODE),
+                     (HADOU_AT, HADOU_CODE)):
+        o = at - RAM_BASE
+        if any(orig[o:o + len(code)]):
+            sys.exit("error: free space for the select/bomb routines is not empty")
+        prog[o:o + len(code)] = code
     for addr, old, new in INPUT_EDITS:
         o = addr - RAM_BASE
         if orig[o:o + len(old)] != old:

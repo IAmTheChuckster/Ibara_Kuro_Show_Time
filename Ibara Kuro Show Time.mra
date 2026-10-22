@@ -49,8 +49,8 @@
     <nvram index="3" size="135680"/>
 
     <rom index="0" zip="ibarashow.zip" md5="none">
-        <part name="ibarashow_u4" crc="b4eb1b11"/>
-        <part name="ibarashow_u4" crc="b4eb1b11"/>
+        <part name="ibarashow_u4" crc="531d55da"/>
+        <part name="ibarashow_u4" crc="531d55da"/>
     </rom>
 
     <buttons names="B1,B2,B3,B4,Start,Coin,Test,Service,Save State" default="A,B,X,Y,Start,R,L,Select"/>

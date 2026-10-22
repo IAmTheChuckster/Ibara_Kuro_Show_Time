@@ -2,7 +2,7 @@
 
 ## To do
 1. upload skill
-2. fix infinite hadougun glitch
+2. ~~fix infinite hadougun glitch~~ (done)
 
 A gameplay patch for Ibara Kuro Black Label (2006/02/06. MASTER VER.)<br> 
 This repository holds only source, tools and notes. **No ROM data is included**; you patch your own dump.
@@ -25,9 +25,9 @@ Other changes:
 |---|---|
 | Warning screen | New text: *This project is unofficial and is not affiliated with, endorsed by, or authorized by CAVE. All rights to the original game and its associated intellectual property remain with their respective rights holders. Have fun!!!* Bottom line: `2026/10/22 SHOW TIME` |
 | Title screen | `SALE BY AMI` → `NOT FOR SALE` |
-| Test mode → DIP SWITCH SETTING | New **bomb counts** line under player counts: `1` (default), `2`, `3`, `4`, `FULL`, `INFINITE`. Sets the full bombs you have at the start and after each respawn (you never get fewer than the normal game gives). `FULL` = 4 bombs and all 40 small bombs; `INFINITE` = 4 bombs that are never used up. Saved with the other settings. |
-| Ship select | **Start** switches between Bond (Player 1) and Dyne (Player 2); press again to switch back. Your Player 1 controls fly whichever you pick. The empty panel no longer shows credit text. Only in a one-player game; a second player can still join normally. |
-| Sound | The countdown beep (coin countdown, continue, name entry) is at half volume. The laughs are separate sounds and are unchanged. |
+| Test mode → DIP SWITCH SETTING | New **bomb counts** line under player counts: `1` (default), `2`, `3`, `4`, `FULL`, `INFINITE`. Sets the full bombs you have at the start and after each respawn (you never get fewer than the normal game gives). `FULL` = 4 bombs and all 40 small bombs; `INFINITE` = 4 bombs and 40 small bombs that are never used up, by a normal bomb or by the hadou gun (bomb button held). Saved with the other settings. |
+| Ship select | **Start** switches between Bond (Player 1) and Dyne (Player 2); press again to switch back. Your Player 1 controls fly whichever you pick, and also enter your name after the game. The empty panel no longer shows credit text. Only in a one-player game; a second player can still join normally. |
+| Sound | The countdown beep (coin countdown, continue, name entry) is at 40% volume. The laughs are separate sounds and are unchanged. |
 
 ## Patching the game
 The following source files are required
@@ -40,7 +40,7 @@ The following source files are required
 Open the **[Show Time Patcher](https://iamthechuckster.github.io/Ibara_Kuro_Show_Time/)** (`index.html`) and drop in your `ibarablk.zip`. It checks the file names and CRCs, builds the patched files automatically, and lets you download just the patched files or a complete `ibarashow.zip` romset. Everything runs in your browser; nothing is uploaded.
 
 ### MiSTer
-`Ibara Kuro Show Time.mra` (also a download button on the web patcher) is for the CV1k core. It expects the complete romset as `ibarashow.zip` (`ibarashow_u4` `b4eb1b11`, `ibarashow_u23` `69403f24`, `ibarablk_u2` `5e46be44`, `u24` `d11ab6b6`).
+`Ibara Kuro Show Time.mra` (also a download button on the web patcher) is for the CV1k core. It expects the complete romset as `ibarashow.zip` (`ibarashow_u4` `531d55da`, `ibarashow_u23` `69403f24`, `ibarablk_u2` `5e46be44`, `u24` `d11ab6b6`).
 
 ### With Python
 Requires Python 3.8+ (standard library only).
@@ -53,7 +53,7 @@ python showtime_patch.py --help           # more options
 ### Result
 | File Name   |   CRC    |
 |-------------|----------|
-| ibarashow_u4  | b4eb1b11 |
+| ibarashow_u4  | 531d55da |
 | ibarashow_u23 | 69403f24 |
 
 `ibarablk_u2` and `u24` are unchanged (copied into the complete romset).
