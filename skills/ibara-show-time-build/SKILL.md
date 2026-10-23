@@ -1,6 +1,6 @@
 ---
-name: ibara-show-time-build
-description: Rebuild the Ibara Kuro "Show Time" ROM patch from scratch (Python patcher, browser patcher, MiSTer MRA, SH-3 routines) from an original ibarablk dump, and test it in MAME 0.289.
+name: "ibara-show-time-build"
+description: "Rebuild the Ibara Kuro Show Time ROM patch from scratch (Python and browser patchers, MiSTer MRA, SH-3 routines) from an original ibarablk dump and test it in MAME."
 ---
 
 # Ibara Kuro Show Time: build from scratch
