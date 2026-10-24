@@ -2,6 +2,9 @@
 A gameplay patch for Ibara Kuro Black Label (2006/02/06. MASTER VER.)<br> 
 This repository holds only source, tools and notes. **No ROM data is included**; you patch your own dump.
 
+## Bugs to be fixed
+1. Playing as Dyne makes the player lose control as the ship
+
 ## To do
 1. lower the beep to 40% of original
 2. raise the laughter by 50%
@@ -10,9 +13,6 @@ This repository holds only source, tools and notes. **No ROM data is included**;
 Why did I make this? Because it's fun and for my own personal research to see the capabilities of Claude.<br> 
 While Claude was used I put effort in making sure there are balanced gameplay.<br> 
 I did all the testing and planning.
-
-## Bugs to be fixed
-1. Playing as Dyne makes the player lose control as the ship
 
 ## Change Notes
 It changes the songs so it plays Ibara loop one instead of loop two tracks from Ibara. Why would anyone want to do this? Because the music from loop one is better.
