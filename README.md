@@ -7,6 +7,9 @@ Why did I make this? Because it's fun and for my own personal research to see th
 While Claude was used I put effort in making sure there are balanced gameplay.<br> 
 I did all the testing and planning.
 
+## Bugs to be fixed
+1. Playing as Dyne makes the player lose control as the ship
+
 ## Change Notes
 It changes the songs so it plays Ibara loop one instead of loop two tracks from Ibara. Why would anyone want to do this? Because the music from loop one is better.
 
