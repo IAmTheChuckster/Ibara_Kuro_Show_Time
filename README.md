@@ -9,7 +9,7 @@ This repository holds only source, tools and notes. **No ROM data is included**;
 1. lower the beep to 40% of original
 2. raise the laughter by 50%
 3. make an option to keep the original soundtrack
-4. another option and call it something like Kuro+ but make it so focus shot sucks in medals for MOAR SCORE!!!!!!!
+4. add another option and call it something like Kuro+ but make it so focus shot sucks in medals for MOAR SCORE!!!!!!!
    
 ## About this project
 Why did I make this? Because it's fun and for my own personal research to see the capabilities of Claude.<br> 
