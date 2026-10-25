@@ -4,6 +4,7 @@ This repository holds only source, tools and notes. **No ROM data is included**;
 
 ## Bugs to be fixed
 1. Playing as Dyne makes the player lose control as the ship
+2. Can only enter test mode if a credit is made
 
 ## To do
 1. lower the beep to 40% of original
