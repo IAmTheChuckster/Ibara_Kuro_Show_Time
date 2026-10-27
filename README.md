@@ -11,6 +11,7 @@ This repository holds only source, tools and notes. **No ROM data is included**;
 2. raise the laughter by 50%
 3. make an option to keep the original soundtrack
 4. add another option and call it something like Kuro+ but make it so focus shot sucks in medals for MOAR SCORE!!!!!!!
+5. Update MRA files to include button names
    
 ## About this project
 Why did I make this? Because it's fun and for my own personal research to see the capabilities of Claude.<br> 
