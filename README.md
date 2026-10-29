@@ -2,10 +2,6 @@
 A gameplay patch for Ibara Kuro Black Label (2006/02/06. MASTER VER.)<br> 
 This repository holds only source, tools and notes. **No ROM data is included**; you patch your own dump.
 
-## Bugs to be fixed
-1. Playing as Dyne makes the player lose control as the ship
-2. Can only enter test mode if a credit is made
-
 ## To do
 1. lower the beep to 40% of original
 2. raise the laughter by 50%
