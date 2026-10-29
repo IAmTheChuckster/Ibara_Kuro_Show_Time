@@ -21,7 +21,8 @@ for name, at, code in (("menu_line.s", sp.TRAMPOLINE, sp.TRAMPOLINE_CODE),
                        ("select_mark.s", sp.MARK_AT, sp.MARK_CODE),
                        ("bomb_keep.s", sp.KEEP_AT, sp.KEEP_CODE),
                        ("new_game.s", sp.NEWGAME_AT, sp.NEWGAME_CODE),
-                       ("hadou_keep.s", sp.HADOU_AT, sp.HADOU_CODE)):
+                       ("hadou_keep.s", sp.HADOU_AT, sp.HADOU_CODE),
+                       ("test_mode.s", sp.TESTM_AT, sp.TESTM_CODE)):
     built = assemble(at, (here.parent / "asm" / name).read_text())
     same = built == code
     ok &= same

@@ -7,7 +7,7 @@
 What the Show Time build changes:
   * music: Bonds of Steel -> Show Time, Air Pollution -> Sky High,
     The Family's Work -> Robot No28 (play times and titles follow)
-  * warning screen: new disclaimer text; boot line "2026/10/22 SHOW TIME"
+  * warning screen: new disclaimer text; boot line "2026/10/29 SHOW TIME"
   * title screen: "SALE BY AMI" -> "NOT FOR SALE"
   * test mode, DIP SWITCH SETTING: new "bomb counts" line (1, 2, 3, 4, FULL,
     INFINITE; default 1): full bombs at the start and after each respawn
@@ -42,7 +42,7 @@ DEFAULT_SWAPS = [                    # (Black Label song to replace, song to pla
     ("Air Pollution", "Sky High"),
     ("The Family's Work", "Robot No28"),
 ]
-DEFAULT_BOOT_TEXT = "2026/10/22 SHOW TIME"   # boot screen line (was "2006/xx/xx. MASTER VER.")
+DEFAULT_BOOT_TEXT = "2026/10/29 SHOW TIME"   # boot screen line (was "2006/xx/xx. MASTER VER.")
 
 # Expected checksums -------------------------------------------------------
 INPUTS = {   # name: (size, sha1)
@@ -50,7 +50,7 @@ INPUTS = {   # name: (size, sha1)
     "u23":         (4194304, "0556e771cc02638bf8814315ba671c2d442594f1"),
 }
 DEFAULT_OUTPUTS = {   # sha1 of the result when the default settings are used
-    "ibarablk_u4": "796b4540f1cd0be2dbc5c3238b2a74ba042e8b8d",   # crc32 531d55da
+    "ibarablk_u4": "e7007860c48e55fd0e9c9dee8a88e868d333fe71",   # crc32 59721266
     "u23":         "51f6536b0845fc26f266761ae344992fb38ffee8",   # crc32 69403f24
 }
 UNPACKED_PROGRAM_SHA1 = "531fc52e0d84866bca8509f36a9c9e6319667bea"   # original, unpacked
@@ -186,12 +186,14 @@ MARK_AT = 0x0C05B600
 MARK_CODE = bytes.fromhex("d202e1032210d202000b61220c05b4f20c238014")
 NEWGAME_AT = 0x0C05B640                   # new game: Dyne mode off (asm/new_game.s)
 NEWGAME_CODE = bytes.fromhex("e00017012f16d103e0018011e0002100000b61f60c05b4f0")
+TESTM_AT = 0x0C05B6E0                     # test mode: Dyne mode off (asm/test_mode.s)
+TESTM_CODE = bytes.fromhex("d003e8002082d803db03000b000900090c05b4f00c060bc00c061200")
 HADOU_AT = 0x0C05B660                     # INFINITE: the hadou gun spends nothing either (asm/hadou_keep.s)
 HADOU_CODE = bytes.fromhex("d0036000880589002410000b000900090c23dea4")
 KEEP_AT = 0x0C05B620                      # INFINITE: small bombs are not spent either (asm/bomb_keep.s)
 KEEP_CODE = bytes.fromhex("2f26d2056220622ce004320660308b00e000000b62f600090c23dea4")
 STUB_R1 = bytes.fromhex("d101" "412b" "0009" "0009")  # as STUB, but jumps via r1
-INPUT_CODE = bytes.fromhex("d22c6620dd2cd23360208806890584d220088b02e000a039000984d2600c2008893270ff80d260d0600cdb246cb06ccc650375013c508b296063c810042984d16503604380d16063cb1066032448891b25588b19d21ad31be554355c64226832228223427204730445108bf7d2148427c9f78027d3138437cb08803760b0ca032b0060d0ca012d0060d0600c20088b03d40dd10ea00b0009d40cd10b6063c93088008904883089026063ca306603d008402b0009a40001240c05b4f00c2394970c29d1d80c29d478a4000126a40001340c060e580c2a6d64")
+INPUT_CODE = bytes.fromhex("d2346620dd34d23b60208806890584d220088b02e000a039000984d2600c2008893270ff80d260d0600cdb2c6cb06ccc650375013c508b296063c810042984d16503604380d16063cb1066032448891b25588b19d222d323e554355c64226832228223427204730445108bf7d21c8427c9f78027d31b8437cb08803760b0ca032b0060d0ca012d0060d0600c20088b03d415d116a01a0009d414d11384d220088b0bd20f602220088b10d20e602220088b03d210602088068b086063c93088008904883089026063ca306603d008402b00090009a40001240c05b4f00c2394970c29d1d80c29d478a4000126a40001340c060e580c2a6d64")
 INPUT_EDITS = [
     (0x0C060DD4, bytes.fromhex("0009" * 6), STUB + INPUT_AT.to_bytes(4, "big")),
     (0x0C060E54, bytes.fromhex("d25d"), bytes.fromhex("afbe")),   # bra stub (delay slot: mov #16,r7)
@@ -213,6 +215,9 @@ INPUT_EDITS = [
     (0x0C0737D0, bytes.fromhex("73026030"), bytes.fromhex("bff0" "7302")),   # bsr bomb_keep stub / add #2,r3
     (0x0C0737F4, bytes.fromhex("0009" * 6), STUB + HADOU_AT.to_bytes(4, "big")),
     (0x0C0737DA, bytes.fromhex("2410"), bytes.fromhex("b00b")),   # bsr stub (store only if not INFINITE)
+    # test mode: Dyne mode off (normal controls in the menu)
+    (0x0C0629B4, bytes.fromhex("0009" * 6), STUB + TESTM_AT.to_bytes(4, "big")),
+    (0x0C062808, bytes.fromhex("d879db7a"), bytes.fromhex("b0d4" "0009")),   # bsr stub (loads redone in the routine)
     # new game: Dyne mode off
     (0x0C06AE44, bytes.fromhex("0009" * 6), STUB + NEWGAME_AT.to_bytes(4, "big")),
     (0x0C06A7B4, bytes.fromhex("1701"), bytes.fromhex("b346")),   # bsr stub (redone in the routine)
@@ -438,7 +443,8 @@ def apply_extras(orig: bytes, prog: bytearray):
     o = INPUT_AT - RAM_BASE
     prog[o:o + len(INPUT_CODE)] = INPUT_CODE
     for at, code in ((MARK_AT, MARK_CODE), (KEEP_AT, KEEP_CODE), (NEWGAME_AT, NEWGAME_CODE),
-                     (HADOU_AT, HADOU_CODE)):
+                     (HADOU_AT, HADOU_CODE),
+                     (TESTM_AT, TESTM_CODE)):
         o = at - RAM_BASE
         if any(orig[o:o + len(code)]):
             sys.exit("error: free space for the select/bomb routines is not empty")

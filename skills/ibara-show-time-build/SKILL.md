@@ -17,7 +17,7 @@ is shared**; only new code, new text and changed-byte tables.
 | ibarablk_u2 | 5e46be44 | NAND, copied unchanged |
 | u24 | d11ab6b6 | copied unchanged |
 
-Outputs: `ibarashow_u4` **531d55da** (sha1 796b4540f1cd0be2dbc5c3238b2a74ba042e8b8d),
+Outputs: `ibarashow_u4` **59721266** (sha1 e7007860c48e55fd0e9c9dee8a88e868d333fe71),
 `ibarashow_u23` **69403f24** (sha1 51f6536b0845fc26f266761ae344992fb38ffee8). Complete romset zip:
 `ibarashow.zip` = those two + ibarablk_u2 + u24. If you reproduce the features exactly, the CRCs
 must match; check with the published values before shipping.
@@ -45,15 +45,15 @@ must match; check with the published values before shipping.
 | Feature | Edit |
 |---|---|
 | Music | Bonds of Steel→Show Time, Air Pollution→Sky High, The Family's Work→Robot No28. u23 sequence table at 0x400 + 4·id (intro/loop ids: Show Time 0F/10, Sky High 11/12, Robot No28 17/18, Bonds of Steel 1B/1C, Family's Work 1D/1E, Air Pollution 1F/20); copy play-time entries in tables 0x0C0C3A58 and 0x0C0C3E58; rename the slot in the title list 0x0C2069B4–0x0C206A88 (`$Name\0`). |
-| Boot line | `2026/10/22 SHOW TIME` at 0x0C0C4E08 and 0x0C0C4F88 (30 bytes, 4 leading spaces); nop the clock-date calls 0x0C06BC82/0x0C06BC8E (`490b`→`0009`). |
+| Boot line | `2026/10/29 SHOW TIME` at 0x0C0C4E08 and 0x0C0C4F88 (30 bytes, 4 leading spaces); nop the clock-date calls 0x0C06BC82/0x0C06BC8E (`490b`→`0009`). |
 | Warning screen | Japan block 0x0C0C4C68 (12 × 32-byte lines), export 0x0C0C4E28 (11 lines; its 12th slot is the boot line). Uppercase font only. |
 | Title | `SALE BY AMI` → `NOT FOR SALE`: text placed in spare warning line 0x0C0C4DC8, literal 0x0C06A688 re-pointed. |
 | DIP "bomb counts" | 1/2/3/4/FULL/INFINITE (values 0–5, default 0) on the hidden menu index 12 (variable 0x0C23DEA4, already saved); menu tables near 0x0C1731FC/0x0C173248/0x0C17325C, strings at 0x0C173800, draw routine `asm/menu_line.s` @0x0C05B700. |
 | Bombs | Player block 0x0C29D1D8 + p·0x2A0: +0x25D full bombs (max 4), +0x25E small bombs (max 40; at 40 the game spends them first). Spawn hook 0x0C06D216 → stub 0x0C06D3B4 → `bomb_spawn.s` @0x0C05B680 (full = max(normal, setting+1); FULL/INFINITE also 40 small). Bomb store 0x0C0736B6 → stub 0x0C073724 → `bomb_use.s` @0x0C05B6C0. Small-bomb checks 0x0C0736A8 and 0x0C0737D0 → stub 0x0C0737B4 → `bomb_keep.s` @0x0C05B620 (report 0 when INFINITE). The hadou gun (bomb held) has its own store at 0x0C0737DA → stub 0x0C0737F4 → `hadou_keep.s` @0x0C05B660. |
-| Ship select Start = Bond/Dyne | Control reader 0x0C060E54 (bra) → stub 0x0C060DD4 → `p2_toggle.s` @0x0C05B500, returns to 0x0C060E58 with r6 = start/coin byte, r4/r1 = P1/P2 port. State 0x0C05B4F0: +0 Dyne flag, +1 Start held, +2 select-active counter (set to 3 each frame by hook 0x0C0B8390 → stub 0x0C0B8384 → `select_mark.s` @0x0C05B600). Toggle when choosing mask 0x0C239497 == flag+1 and P1 Start newly pressed: swap the two 0x2A0-byte player blocks, fix pilot bit (+7 bit 3), mask ^= 3, flag ^= 1; hide that Start press. In Dyne mode swap P1/P2 ports (A4000126/A4000134) and Start bits 0x10/0x20, but only while mode byte 0x0C2A6D64 == 6 (play, continue, name entry) or select active. Flag cleared at new-game init 0x0C06A7B4 → stub 0x0C06AE44 → `new_game.s` @0x0C05B640. Remove the empty-panel credit text: jsr→nop at 0x0C06DA5C/68/82/9C. |
+| Ship select Start = Bond/Dyne | Control reader 0x0C060E54 (bra) → stub 0x0C060DD4 → `p2_toggle.s` @0x0C05B500, returns to 0x0C060E58 with r6 = start/coin byte, r4/r1 = P1/P2 port. State 0x0C05B4F0: +0 Dyne flag, +1 Start held, +2 select-active counter (set to 3 each frame by hook 0x0C0B8390 → stub 0x0C0B8384 → `select_mark.s` @0x0C05B600). Toggle when choosing mask 0x0C239497 == flag+1 and P1 Start newly pressed: swap the two 0x2A0-byte player blocks, fix pilot bit (+7 bit 3), mask ^= 3, flag ^= 1; hide that Start press. In Dyne mode swap P1/P2 ports (A4000126/A4000134) and Start bits 0x10/0x20, but only while mode byte 0x0C2A6D64 == 6 (play, continue, name entry) or select active. Flag cleared at new-game init 0x0C06A7B4 → stub 0x0C06AE44 → `new_game.s` @0x0C05B640. Also cleared every frame of the test menu: 0x0C062808 → stub 0x0C0629B4 → `test_mode.s` @0x0C05B6E0. Start bits are swapped only on the select, or when the P1 block is empty and (P2 block active or mode == 6, i.e. continue) – never on the title/attract demo (both blocks non-zero there), else a Start there begins a P2-side game nobody can control. Remove the empty-panel credit text: jsr→nop at 0x0C06DA5C/68/82/9C. |
 | Beep | Countdown beep = effect 0x5C; default volume byte 0x0C206824+0x5C: 0xFC → 0x65 (40%, level is linear). |
 
-Pitfalls learned: 0x0C2289ED is not a scene variable (temporary pointer byte) – it broke the
+Pitfalls learned: never put a PC-relative `mov.l @label` in an rts/bsr delay slot (it loads from the wrong address and crashed test mode). MAME saves a held test switch (DSW) in `work/cfg/ibarablk.cfg`; delete that line if the game keeps booting into test mode. 0x0C2289ED is not a scene variable (temporary pointer byte) – it broke the
 toggle on MiSTer. Player blocks are non-zero during attract, so they can't mean "in a game". The
 countdown 0x0C3C8474 stays non-zero after an early name entry. Always find the real state byte by
 diffing RAM dumps across title / attract / game / name entry.

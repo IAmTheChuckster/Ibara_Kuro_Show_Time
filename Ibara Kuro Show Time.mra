@@ -1,5 +1,5 @@
 <!--
-  ikacore_CV1k MRA - Ibara Kuro Black Label (Japan, 2026/10/22 SHOW TIME).
+  ikacore_CV1k MRA - Ibara Kuro Black Label (2026/10/29 SHOW TIME).
   Converted from the community MRA (same set, zip names, CRCs and
   <about>) to the DDR3-direct delivery format, 2026-09-17.
 
@@ -28,7 +28,7 @@
 -->
 <misterromdescription>
     <about author="ika-musume" source="https://github.com/ika-musume/ikacore_CV1k"/>
-    <name>Ibara Kuro Black Label (Japan, 2026/10/22 SHOW TIME)</name>
+    <name>Ibara Kuro Black Label (2026/10/29 SHOW TIME)</name>
     <setname>ibara_showtime</setname>
     <year>2026</year>
     <manufacturer>Cave</manufacturer>
@@ -49,9 +49,9 @@
     <nvram index="3" size="135680"/>
 
     <rom index="0" zip="ibarashow.zip" md5="none">
-        <part name="ibarashow_u4" crc="531d55da"/>
-        <part name="ibarashow_u4" crc="531d55da"/>
+        <part name="ibarashow_u4" crc="59721266"/>
+        <part name="ibarashow_u4" crc="59721266"/>
     </rom>
 
-    <buttons names="B1,B2,B3,B4,Start,Coin,Test,Service,Save State" default="A,B,X,Y,Start,R,L,Select"/>
+    <buttons names="Shot,Bomb,Rapid Shot,Weapon Change,Start,Coin,Test,Service,Save State" default="A,B,X,Y,Start,R,L,Select"/>
 </misterromdescription>
