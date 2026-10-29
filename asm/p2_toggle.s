@@ -88,6 +88,22 @@ PORTS:
 DYNE:
   mov.l @P2PORT,r4      ; P1 controls drive the P2 side and vice versa
   mov.l @P1PORT,r1
+  mov.b @(2,r13),r0     ; swap the Start bits only on the ship select, or when the P1
+  tst r0,r0             ; side is empty and either the P2 side is playing or the game is
+  bf STARTS             ; in its play mode (continue). Never on the title or the attract
+  mov.l @P1BASE,r2      ; demo (both sides filled there), where the Start press would
+  mov.l @r2,r0          ; otherwise start a game on the P2 side.
+  tst r0,r0
+  bf OUT
+  mov.l @P2BASE,r2
+  mov.l @r2,r0
+  tst r0,r0
+  bf STARTS
+  mov.l @MODE,r2
+  mov.b @r2,r0
+  cmp/eq #6,r0
+  bf OUT
+STARTS:
   mov r6,r0             ; swap the two Start bits
   and #48,r0
   cmp/eq #0,r0
