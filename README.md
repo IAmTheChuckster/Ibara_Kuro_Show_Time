@@ -40,7 +40,7 @@ The following source files are required
 | ibarablk_u4 | ee1f1f77 |
 | u23         | a436bb22 |
 
-### In your browser
+### Web Patcher
 Open the **[Show Time Patcher](https://iamthechuckster.github.io/Ibara_Kuro_Show_Time/)** (`index.html`) and drop in your `ibarablk.zip`. It checks the file names and CRCs, builds the patched files automatically, and lets you download just the patched files or a complete `ibarashow.zip` romset. Everything runs in your browser; nothing is uploaded.
 
 ### MiSTer
