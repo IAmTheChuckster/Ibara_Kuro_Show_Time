@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check that the routines in showtime_patch.py match the sources in asm/.
+"""Check that the routines in patch.py match the sources in asm/.
 
     python tools/check_asm.py
 """
@@ -11,7 +11,7 @@ here = Path(__file__).resolve().parent
 sys.path.insert(0, str(here))
 from sh3asm import assemble   # noqa: E402
 
-spec = importlib.util.spec_from_file_location("sp", here.parent / "showtime_patch.py")
+spec = importlib.util.spec_from_file_location("sp", here.parent / "patch.py")
 sp = importlib.util.module_from_spec(spec); spec.loader.exec_module(sp)
 ok = True
 for name, at, code in (("menu_line.s", sp.TRAMPOLINE, sp.TRAMPOLINE_CODE),

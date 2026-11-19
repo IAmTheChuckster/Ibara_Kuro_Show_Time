@@ -3,7 +3,7 @@
 
     python tools/gen_web_extras.py <ibarablk.zip or folder>
 
-It unpacks the program, applies showtime_patch.apply_extras() and prints only the bytes that
+It unpacks the program, applies patch.apply_extras() and prints only the bytes that
 changed, as (address, hex) runs, so the web page carries the same edits as the Python script.
 Only changed bytes are listed (new code and text), never original program bytes.
 """
@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 
 here = Path(__file__).resolve().parent.parent
-spec = importlib.util.spec_from_file_location("sp", here / "showtime_patch.py")
+spec = importlib.util.spec_from_file_location("sp", here / "patch.py")
 sp = importlib.util.module_from_spec(spec); spec.loader.exec_module(sp)
 
 inputs = sp.find_inputs(Path(sys.argv[1]))

@@ -20,8 +20,8 @@ still present in its sound ROM, so a swap only re-points a music slot at them;
 everything else is new code and text written into free space.
 
 Usage:
-    python showtime_patch.py <input> [-o OUTPUT_DIR] [--zip ROMSET.zip]
-    python showtime_patch.py --list                  # show songs and slots
+    python patch.py <input> [-o OUTPUT_DIR] [--zip ROMSET.zip]
+    python patch.py --list                  # show songs and slots
 
 <input> is a folder or .zip (e.g. a MAME romset) containing ibarablk_u4 and u23.
 Output defaults to ./output. Only the Python standard library is needed.
