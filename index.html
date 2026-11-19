@@ -151,6 +151,9 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
 </div>
 
 <script id="core">
+// Build number of this patcher. Bump on every change to index.html and log it in BUILDS.md.
+const BUILD = 10;
+
 // ---- Show Time patch core: a straight port of patch.py ----
 const SONGS = {
   "Show Time": [0x0F, 0x10], "Sky High": [0x11, 0x12], "Like a Rolling Stone": [0x13, 0x14],
@@ -813,7 +816,7 @@ async function buildShowTime(u4, u23, swaps, bootText, progress = () => {}) {
         const crc = hex8(crc32(res[n])), h = await sha1(res[n]);
         const ok = !def || (crc === DEFAULT_OUTPUTS[n].crc && h === DEFAULT_OUTPUTS[n].sha1);
         allOk = allOk && ok;
-        const pill = !def ? '<span class="pill warn">Custom build</span>' : ok ? '<span class="pill ok">Matches Show Time</span>' : '<span class="pill bad">Mismatch</span>';
+        const pill = !def ? '<span class="pill warn">Custom build</span>' : ok ? '<span class="pill ok">Matches Build ' + BUILD + '</span>' : '<span class="pill bad">Mismatch</span>';
         const tr = document.createElement("tr");
         tr.innerHTML = `<td class="mono">${OUT_NAMES[n]}</td><td class="mono">${crc}</td><td class="sha">${h}</td><td>${pill}</td>`;
         $("out-body").appendChild(tr);
@@ -823,7 +826,7 @@ async function buildShowTime(u4, u23, swaps, bootText, progress = () => {}) {
       const notes = r.notes.slice();
       if (!def) notes.unshift("Custom build: the repack was verified, but these files won't match the published Show Time CRCs.");
       if (notes.length) msg($("out-notes"), "warn", notes.join(" "));
-      $("build-status").textContent = "Built and verified against the Show Time checksums.";
+      $("build-status").textContent = "Build " + BUILD + ": built and verified against the Show Time checksums.";
       $("dl-romset").disabled = !state.canRomset;
       $("dl-romset").title = state.canRomset ? "" : "Needs a romset zip containing ibarablk_u2 and u24 with the correct CRC32";
     } catch (err) {
