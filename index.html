@@ -144,10 +144,6 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
       <button class="primary" id="dl-romset" type="button" disabled>Download complete romset (ibarashow.zip)</button>
       <button class="secondary" id="dl-mra" type="button">Download Ibara Kuro Show Time.mra</button>
     </div>
-    <div class="row" id="dl-raw-row" hidden>
-      <button class="secondary" id="dl-u4" type="button">ibarashow_u4</button>
-      <button class="secondary" id="dl-u23" type="button">ibarashow_u23</button>
-    </div>
     <p class="hint" id="dl-hint"><strong>Complete romset</strong> contains the patched <span class="mono">ibarashow_u4</span> and <span class="mono">ibarashow_u23</span>, plus <span class="mono">ibarablk_u2</span> and <span class="mono">u24</span> from your zip, unchanged. Your original files are never modified. <strong>Ibara Kuro Show Time.mra</strong> is for the MiSTer CV1k core and expects the complete romset as <span class="mono">ibarashow.zip</span>.</p>
   </section>
 
@@ -830,7 +826,6 @@ async function buildShowTime(u4, u23, swaps, bootText, progress = () => {}) {
       $("build-status").textContent = "Built and verified against the Show Time checksums.";
       $("dl-romset").disabled = !state.canRomset;
       $("dl-romset").title = state.canRomset ? "" : "Needs a romset zip containing ibarablk_u2 and u24 with the correct CRC32";
-      $("dl-raw-row").hidden = !!window.claude;
     } catch (err) {
       $("build-status").textContent = "";
       msg($("out-notes"), "bad", err.message || String(err));
@@ -843,7 +838,7 @@ async function buildShowTime(u4, u23, swaps, bootText, progress = () => {}) {
     state.result = null;
     $("out-body").innerHTML = `<tr><td class="mono">ibarashow_u4</td><td class="mono">${DEFAULT_OUTPUTS.ibarablk_u4.crc}</td><td class="sha">${DEFAULT_OUTPUTS.ibarablk_u4.sha1}</td><td><span class="pill">Expected</span></td></tr>` +
       `<tr><td class="mono">ibarashow_u23</td><td class="mono">${DEFAULT_OUTPUTS.u23.crc}</td><td class="sha">${DEFAULT_OUTPUTS.u23.sha1}</td><td><span class="pill">Expected</span></td></tr>`;
-    $("dl-romset").disabled = true; $("dl-raw-row").hidden = true;
+    $("dl-romset").disabled = true;
     if (note) msg($("out-notes"), "", note); else $("out-notes").hidden = true;
   }
 
@@ -945,8 +940,6 @@ async function buildShowTime(u4, u23, swaps, bootText, progress = () => {}) {
 `;
   }
   $("dl-mra").addEventListener("click", (ev) => save("Ibara Kuro Show Time.mra", new Blob([mraText()], { type: "application/xml" }), ev.currentTarget));
-  $("dl-u4").addEventListener("click", (ev) => save("ibarashow_u4", new Blob([state.result.ibarablk_u4], { type: "application/octet-stream" }), ev.currentTarget));
-  $("dl-u23").addEventListener("click", (ev) => save("ibarashow_u23", new Blob([state.result.u23], { type: "application/octet-stream" }), ev.currentTarget));
 
   // ---------- file input ----------
   const drop = $("drop");
