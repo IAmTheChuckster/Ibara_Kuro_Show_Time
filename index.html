@@ -141,15 +141,14 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     </div>
     <div class="notice" id="out-notes" hidden></div>
     <div class="row" id="dl-row">
-      <button class="primary" id="dl-patched" type="button" disabled>Download patched files (.zip)</button>
-      <button class="secondary" id="dl-romset" type="button" disabled>Download complete romset (ibarashow.zip)</button>
+      <button class="primary" id="dl-romset" type="button" disabled>Download complete romset (ibarashow.zip)</button>
       <button class="secondary" id="dl-mra" type="button">Download Ibara Kuro Show Time.mra</button>
     </div>
     <div class="row" id="dl-raw-row" hidden>
       <button class="secondary" id="dl-u4" type="button">ibarashow_u4</button>
       <button class="secondary" id="dl-u23" type="button">ibarashow_u23</button>
     </div>
-    <p class="hint" id="dl-hint"><strong>Patched files</strong> gives just <span class="mono">ibarashow_u4</span> and <span class="mono">ibarashow_u23</span>. <strong>Complete romset</strong> adds <span class="mono">ibarablk_u2</span> and <span class="mono">u24</span> from your zip, unchanged. Your original files are never modified. <strong>Ibara Kuro Show Time.mra</strong> is for the MiSTer CV1k core and expects the complete romset as <span class="mono">ibarashow.zip</span>.</p>
+    <p class="hint" id="dl-hint"><strong>Complete romset</strong> contains the patched <span class="mono">ibarashow_u4</span> and <span class="mono">ibarashow_u23</span>, plus <span class="mono">ibarablk_u2</span> and <span class="mono">u24</span> from your zip, unchanged. Your original files are never modified. <strong>Ibara Kuro Show Time.mra</strong> is for the MiSTer CV1k core and expects the complete romset as <span class="mono">ibarashow.zip</span>.</p>
   </section>
 
   <footer>No ROM data is included in this page. It only rebuilds files from the dump you supply.</footer>
@@ -829,7 +828,6 @@ async function buildShowTime(u4, u23, swaps, bootText, progress = () => {}) {
       if (!def) notes.unshift("Custom build: the repack was verified, but these files won't match the published Show Time CRCs.");
       if (notes.length) msg($("out-notes"), "warn", notes.join(" "));
       $("build-status").textContent = "Built and verified against the Show Time checksums.";
-      $("dl-patched").disabled = false;
       $("dl-romset").disabled = !state.canRomset;
       $("dl-romset").title = state.canRomset ? "" : "Needs a romset zip containing ibarablk_u2 and u24 with the correct CRC32";
       $("dl-raw-row").hidden = !!window.claude;
@@ -845,7 +843,7 @@ async function buildShowTime(u4, u23, swaps, bootText, progress = () => {}) {
     state.result = null;
     $("out-body").innerHTML = `<tr><td class="mono">ibarashow_u4</td><td class="mono">${DEFAULT_OUTPUTS.ibarablk_u4.crc}</td><td class="sha">${DEFAULT_OUTPUTS.ibarablk_u4.sha1}</td><td><span class="pill">Expected</span></td></tr>` +
       `<tr><td class="mono">ibarashow_u23</td><td class="mono">${DEFAULT_OUTPUTS.u23.crc}</td><td class="sha">${DEFAULT_OUTPUTS.u23.sha1}</td><td><span class="pill">Expected</span></td></tr>`;
-    $("dl-patched").disabled = true; $("dl-romset").disabled = true; $("dl-raw-row").hidden = true;
+    $("dl-romset").disabled = true; $("dl-raw-row").hidden = true;
     if (note) msg($("out-notes"), "", note); else $("out-notes").hidden = true;
   }
 
@@ -884,11 +882,6 @@ async function buildShowTime(u4, u23, swaps, bootText, progress = () => {}) {
       items.push({ name: n, method: e.method, crc: e.crc, size: e.size, data: new Uint8Array(state.zipBuf, e.dataStart, e.csize) });
     }
     await save("ibarashow.zip", writeZip(items), btn);
-  });
-  $("dl-patched").addEventListener("click", async (ev) => {
-    const btn = ev.currentTarget;
-    const p = await patchedItems();
-    await save("ibarashow_patched_files.zip", writeZip(PATCHED.map((n) => p[n])), btn);
   });
   // MiSTer MRA for the complete romset; names and CRCs come from the same tables the patcher checks
   function mraText() {
